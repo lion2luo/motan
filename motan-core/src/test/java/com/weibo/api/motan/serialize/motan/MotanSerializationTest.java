@@ -1,10 +1,12 @@
 package com.weibo.api.motan.serialize.motan;
 
+import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Sets;
 import com.weibo.api.motan.codec.Serialization;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.lang.reflect.Type;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -86,7 +88,7 @@ public class MotanSerializationTest {
     public static TestObject createDefaultTestObject() {
         TestObject testObject = new TestObject();
         testObject.f1 = true;
-        testObject.f2 = (byte)2;
+        testObject.f2 = (byte) 2;
         testObject.f3 = new byte[]{1, 2, 3};
         testObject.f4 = "test";
         testObject.f5 = (short) 2;
@@ -104,7 +106,7 @@ public class MotanSerializationTest {
     @Test
     public void serialize() throws Exception {
         String s = "hello";
-        Serialization serialization = new MotanSerialization();
+        MotanSerialization serialization = new MotanSerialization();
         byte[] b = serialization.serialize(s);
         assertNotNull(b);
         assertTrue(b.length > 0);
@@ -118,7 +120,8 @@ public class MotanSerializationTest {
         b = serialization.serialize(map);
         assertNotNull(b);
         assertTrue(b.length > 0);
-        Map m2 = serialization.deserialize(b, Map.class);
+        Map m2 = serialization.deserialize(b, Map.class, new TypeReference<Map<String, String>>() {
+        }.getType());
         assertEquals(map.size(), m2.size());
         for (Map.Entry entry : map.entrySet()) {
             assertEquals(entry.getValue(), m2.get(entry.getKey()));
@@ -140,12 +143,11 @@ public class MotanSerializationTest {
         testObject.f12 = createDefaultTestObject();
         TestObject dv = serialization.deserialize(serialization.serialize(testObject), TestObject.class);
         System.out.println(dv);
-
     }
 
     @Test
     public void testSerializeMulti() throws Exception {
-        Serialization serialization = new MotanSerialization();
+        MotanSerialization serialization = new MotanSerialization();
         Object[] objects = new Object[3];
         objects[0] = "teststring";
         Map<String, String> map = new HashMap<>();
@@ -159,7 +161,10 @@ public class MotanSerializationTest {
         assertNotNull(b);
         assertTrue(b.length > 0);
 
-        Object[] result = serialization.deserializeMulti(b, new Class[]{String.class, Map.class, byte[].class});
+        Object[] result = serialization.deserializeMulti(b,
+                new Class[]{String.class, Map.class, byte[].class},
+                new Type[]{String.class, new TypeReference<Map<String, String>>() {
+                }.getType(), byte[].class});
         assertEquals(3, result.length);
         assertTrue(result[0] instanceof String);
         assertEquals(result[0], objects[0]);
@@ -178,51 +183,51 @@ public class MotanSerializationTest {
 
     @Test
     public void testBaseType() throws Exception {
-        verify(true);
-        verify(false);
+        verifyBasic(true);
+        verifyBasic(false);
 
-        verify((byte) 16);
-        verify((byte) 0);
-        verify((byte) 255);
+        verifyBasic((byte) 16);
+        verifyBasic((byte) 0);
+        verifyBasic((byte) 255);
 
-        verify((short) -16);
-        verify((short) 0);
-        verify((short) 16);
-        verify((short) 127);
-        verify((short) 128);
-        verify((short) 300);
-        verify(Short.MAX_VALUE);
-        verify(Short.MIN_VALUE);
+        verifyBasic((short) -16);
+        verifyBasic((short) 0);
+        verifyBasic((short) 16);
+        verifyBasic((short) 127);
+        verifyBasic((short) 128);
+        verifyBasic((short) 300);
+        verifyBasic(Short.MAX_VALUE);
+        verifyBasic(Short.MIN_VALUE);
 
-        verify(-16);
-        verify(0);
-        verify(16);
-        verify(127);
-        verify(128);
-        verify(300);
-        verify(Integer.MAX_VALUE);
-        verify(Integer.MIN_VALUE);
+        verifyBasic(-16);
+        verifyBasic(0);
+        verifyBasic(16);
+        verifyBasic(127);
+        verifyBasic(128);
+        verifyBasic(300);
+        verifyBasic(Integer.MAX_VALUE);
+        verifyBasic(Integer.MIN_VALUE);
 
-        verify(-16L);
-        verify(0L);
-        verify(16L);
-        verify(127L);
-        verify(128L);
-        verify(300L);
-        verify(Long.MAX_VALUE);
-        verify(Long.MIN_VALUE);
+        verifyBasic(-16L);
+        verifyBasic(0L);
+        verifyBasic(16L);
+        verifyBasic(127L);
+        verifyBasic(128L);
+        verifyBasic(300L);
+        verifyBasic(Long.MAX_VALUE);
+        verifyBasic(Long.MIN_VALUE);
 
-        verify(3.141592653f);
-        verify(-3.141592653f);
-        verify(0f);
-        verify(Float.MAX_VALUE);
-        verify(Float.MIN_VALUE);
+        verifyBasic(3.141592653f);
+        verifyBasic(-3.141592653f);
+        verifyBasic(0f);
+        verifyBasic(Float.MAX_VALUE);
+        verifyBasic(Float.MIN_VALUE);
 
-        verify(3.141592653d);
-        verify(-3.141592653d);
-        verify(0d);
-        verify(Double.MAX_VALUE);
-        verify(Double.MIN_VALUE);
+        verifyBasic(3.141592653d);
+        verifyBasic(-3.141592653d);
+        verifyBasic(0d);
+        verifyBasic(Double.MAX_VALUE);
+        verifyBasic(Double.MIN_VALUE);
     }
 
     @Test
@@ -234,18 +239,29 @@ public class MotanSerializationTest {
 
         String[] sArray = new String[sList.size()];
         sArray = sList.toArray(sArray);
-        verify(sList);
-        verify(new HashSet<>(sList));
-        verify(sArray);
+        Set<String> sSet = new HashSet<>(sList);
+        verifyBasic(sList);
+        verifyBasic(sSet);
+        verifyBasic(sArray);
+
+        MotanSerialization serialization = new MotanSerialization();
+        List dList = serialization.deserialize(serialization.serialize(sList), List.class, new TypeReference<List<String>>() {
+        }.getType());
+        assertEquals(sList, dList);
+
+        Set dSet = serialization.deserialize(serialization.serialize(sList), Set.class, new TypeReference<Set<String>>() {
+        }.getType());
+        assertEquals(sSet, dSet);
     }
 
     @Test
     public void testMap() throws Exception {
-        Serialization serialization = new MotanSerialization();
+        MotanSerialization serialization = new MotanSerialization();
         Map<String, String> v = new HashMap<>();
         v.put("1", "1");
         v.put("2", "2");
-        Map<Object, Object> dv = serialization.deserialize(serialization.serialize(v), Map.class);
+        Map<Object, Object> dv = serialization.deserialize(serialization.serialize(v), Map.class, new TypeReference<Map<String, String>>() {
+        }.getType());
         assertEquals(v.size(), dv.size());
         Map<Object, Object> ov = new HashMap<>();
         ov.put("a", 1);
@@ -259,7 +275,8 @@ public class MotanSerializationTest {
         ov.put("i", new String[]{"1", "2", "3", "4"});
         ov.put("j", Arrays.asList("1", "2", "3", "4"));
         ov.put("k", Sets.newHashSet("1", "2", "3", "4"));
-        dv = serialization.deserialize(serialization.serialize(ov), Map.class);
+        dv = serialization.deserialize(serialization.serialize(ov), Map.class, new TypeReference<Map<Object, Object>>() {
+        }.getType());
         assertEquals(ov.size(), dv.size());
         for (Map.Entry<Object, Object> entry : ov.entrySet()) {
             if (entry.getValue().getClass().isArray()) {
@@ -277,7 +294,46 @@ public class MotanSerializationTest {
         }
     }
 
-    private void verify(Object v) throws Exception {
+    @Test
+    public void testListMapGenerics() throws Exception {
+        Map<String, List<String>> mapList = new HashMap<>();
+        mapList.put("a", Arrays.asList("1", "2"));
+        mapList.put("b", Arrays.asList("3", "4"));
+
+        Map<String, Set<String>> mapSet = new HashMap<>();
+        mapSet.put("a", Sets.newHashSet("1", "2"));
+        mapSet.put("b", Sets.newHashSet("3", "4"));
+
+        List<Map<String, String>> listMap = new ArrayList<>();
+        listMap.add(new HashMap<String, String>() {
+            {
+                put("a", "a");
+            }
+        });
+        listMap.add(new HashMap<String, String>() {
+            {
+                put("b", "b");
+            }
+        });
+
+        MotanSerialization serialization = new MotanSerialization();
+        assertEquals(mapList,
+                serialization.deserialize(serialization.serialize(mapList),
+                        Map.class, new TypeReference<Map<String, List<String>>>() {
+                        }.getType()));
+
+        assertEquals(mapSet,
+                serialization.deserialize(serialization.serialize(mapSet),
+                        Map.class, new TypeReference<Map<String, Set<String>>>() {
+                        }.getType()));
+
+        assertEquals(listMap,
+                serialization.deserialize(serialization.serialize(listMap),
+                        List.class, new TypeReference<List<Map<String, String>>>() {
+                        }.getType()));
+    }
+
+    private void verifyBasic(Object v) throws Exception {
         Serialization serialization = new MotanSerialization();
         byte[] bytes = serialization.serialize(v);
         Object dv = serialization.deserialize(bytes, v.getClass());
@@ -287,5 +343,4 @@ public class MotanSerializationTest {
             assertEquals(v, dv);
         }
     }
-
 }
