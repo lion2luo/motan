@@ -125,7 +125,7 @@ public class RefererInvocationHandlerTest extends BaseTestCase {
 
         List<Cluster> clus = new ArrayList<Cluster>();
         clus.add(cluster);
-        RefererInvocationHandler handler = new RefererInvocationHandler(String.class, clus);
+        RefererInvocationHandler handler = new RefererInvocationHandler(TestService.class, clus);
         Method method;
         try {
             method = TestService.class.getMethod("helloAsync", new Class<?>[] {});

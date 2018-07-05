@@ -33,6 +33,11 @@ import io.grpc.examples.routeguide.Point;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class Motan2RpcClient {
 
     public static void main(String[] args) throws Throwable {
@@ -54,6 +59,23 @@ public class Motan2RpcClient {
         CommonHandler xmlClient = (CommonHandler) ctx.getBean("motanDemoReferer-common-client");
         motan2XmlCommonClientDemo(xmlClient);
         motan2ApiCommonClientDemo();
+
+        // motan serialization
+        service = (MotanDemoService) ctx.getBean("motanDemoReferer-motan");
+        print(service);
+        User u1 = new User();
+        u1.setId(1);
+        u1.setName("aaa");
+        User u2 = new User();
+        u2.setId(2);
+        u2.setName("bbb");
+        List<User> userList = Arrays.asList(u1, u2);
+        Map<Integer, User> userMap = new HashMap<>();
+        userMap.put(u1.getId(), u1);
+        userMap.put(u2.getId(), u2);
+
+        System.out.println(service.listUser(userList));
+        System.out.println(service.mapUser(userMap));
 
         System.out.println("motan demo is finish.");
         System.exit(0);

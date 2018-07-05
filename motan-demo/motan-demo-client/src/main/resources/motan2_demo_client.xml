@@ -30,6 +30,7 @@
     <motan:registry regProtocol="direct" name="registry" address="127.0.0.1:8001"/>
     <motan:registry regProtocol="direct" name="registry2" address="127.0.0.1:8002"/>
     <motan:registry regProtocol="direct" name="registry3" address="127.0.0.1:8003"/>
+    <motan:registry regProtocol="direct" name="registry4" address="127.0.0.1:8004"/>
 
 
     <!-- motan2 with hessian serialization -->
@@ -43,6 +44,10 @@
     <motan:protocol id="motan2-pb" name="motan2" haStrategy="failover" serialization="protobuf"
                     loadbalance="roundrobin" maxClientConnection="10" minClientConnection="2"/>
 
+    <!-- motan2 with motan serialization -->
+    <motan:protocol id="motan2-motan" name="motan2" haStrategy="failover" serialization="motan"
+                    loadbalance="roundrobin" maxClientConnection="10" minClientConnection="2"/>
+
     <!-- 通用referer基础配置 -->
     <motan:basicReferer requestTimeout="200" accessLog="false"
                         retries="2" group="motan-demo-rpc" module="motan-demo-rpc"
@@ -53,13 +58,20 @@
     <motan:referer id="motanDemoReferer"
                    interface="com.weibo.motan.demo.service.MotanDemoService"
                    connectTimeout="1000" requestTimeout="1000" basicReferer="motantestClientBasicConfig"/>
+
     <motan:referer id="motanDemoReferer-simple" registry="registry2"
                    interface="com.weibo.motan.demo.service.MotanDemoService" protocol="motan2-simple"
                    connectTimeout="1000" requestTimeout="1000" basicReferer="motantestClientBasicConfig"/>
+
     <motan:referer id="motanDemoReferer-pb" registry="registry3"
                    interface="com.weibo.motan.demo.service.PbParamService" protocol="motan2-pb"
                    connectTimeout="1000" requestTimeout="1000" basicReferer="motantestClientBasicConfig"/>
+
     <motan:referer id="motanDemoReferer-common-client" protocol="motan2" registry="registry"
                    serviceInterface="com.weibo.motan.demo.service.MotanDemoService"
+                   connectTimeout="1000" requestTimeout="1000" basicReferer="motantestClientBasicConfig"/>
+
+    <motan:referer id="motanDemoReferer-motan" registry="registry4"
+                   interface="com.weibo.motan.demo.service.MotanDemoService" protocol="motan2-motan"
                    connectTimeout="1000" requestTimeout="1000" basicReferer="motantestClientBasicConfig"/>
 </beans>

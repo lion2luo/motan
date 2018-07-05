@@ -19,6 +19,7 @@
 package com.weibo.api.motan.serialize.motan;
 
 import com.weibo.api.motan.codec.Serialization;
+import com.weibo.api.motan.codec.TypeDeserializer;
 import com.weibo.api.motan.core.extension.SpiMeta;
 import com.weibo.api.motan.exception.MotanServiceException;
 import com.weibo.api.motan.protocol.v2motan.GrowableByteBuffer;
@@ -30,7 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 @SpiMeta(name = "motan")
-public class MotanSerialization implements Serialization {
+public class MotanSerialization implements Serialization, TypeDeserializer {
     public static final byte FALSE = 0;
     public static final byte TRUE = 1;
     public static final byte NULL = 2;
@@ -156,14 +157,7 @@ public class MotanSerialization implements Serialization {
                 Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
                 if (actualTypeArguments.length == 1) {
                     Type paramType = actualTypeArguments[0];
-                    Class paramClass;
-                    if (paramType instanceof Class) {
-                        paramClass = (Class) paramType;
-                    } else if (paramType instanceof ParameterizedType) {
-                        paramClass = (Class) ((ParameterizedType) paramType).getRawType();
-                    } else {
-                        throw new MotanServiceException("MotanSerialization list with unknown generic type");
-                    }
+                    Class paramClass = getClassOfType(paramType);
                     return (T) toJavaPojoList((List) obj, paramClass, paramType);
                 }
             }
@@ -180,14 +174,7 @@ public class MotanSerialization implements Serialization {
                 Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
                 if (actualTypeArguments.length == 1) {
                     Type paramType = actualTypeArguments[0];
-                    Class paramClass;
-                    if (paramType instanceof Class) {
-                        paramClass = (Class) paramType;
-                    } else if (paramType instanceof ParameterizedType) {
-                        paramClass = (Class) ((ParameterizedType) paramType).getRawType();
-                    } else {
-                        throw new MotanServiceException("MotanSerialization set with unknown generic type");
-                    }
+                    Class paramClass = getClassOfType(paramType);
                     return (T) new HashSet(toJavaPojoList((List) obj, paramClass, paramType));
                 }
             }
@@ -204,24 +191,9 @@ public class MotanSerialization implements Serialization {
                 Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
                 if (actualTypeArguments.length == 2) {
                     Type keyType = actualTypeArguments[0];
-                    Class keyClass;
-                    if (keyType instanceof Class) {
-                        keyClass = (Class) keyType;
-                    } else if (keyType instanceof ParameterizedType) {
-                        keyClass = (Class) ((ParameterizedType) keyType).getRawType();
-                    } else {
-                        throw new MotanServiceException("MotanSerialization map with unknown generic key type");
-                    }
-
+                    Class keyClass = getClassOfType(keyType);
                     Type valueType = actualTypeArguments[1];
-                    Class valueClass;
-                    if (valueType instanceof Class) {
-                        valueClass = (Class) keyType;
-                    } else if (valueType instanceof ParameterizedType) {
-                        valueClass = (Class) ((ParameterizedType) valueType).getRawType();
-                    } else {
-                        throw new MotanServiceException("MotanSerialization map with unknown generic value type");
-                    }
+                    Class valueClass = getClassOfType(valueType);
                     HashMap result = new HashMap();
                     for (Map.Entry<?, ?> entry : ((Map<?, ?>) obj).entrySet()) {
                         result.put(toJavaPojo(entry.getKey(), keyClass, keyType), toJavaPojo(entry.getValue(), valueClass, valueType));
@@ -234,11 +206,21 @@ public class MotanSerialization implements Serialization {
     }
 
     public static <T> List<T> toJavaPojoList(List objects, Class<T> type, Type genericType) {
-        List<T> result = new ArrayList<>();
+        List<T> result = new ArrayList<>(objects.size());
         for (Object object : objects) {
             result.add(toJavaPojo(object, type, genericType));
         }
         return result;
+    }
+
+    public static Class<?> getClassOfType(Type type) {
+        if (type instanceof Class) {
+            return (Class) type;
+        } else if (type instanceof ParameterizedType) {
+            return (Class) ((ParameterizedType) type).getRawType();
+        } else {
+            throw new MotanServiceException("MotanSerialization unknown class type " + type);
+        }
     }
 
     @Override
@@ -354,11 +336,13 @@ public class MotanSerialization implements Serialization {
         return deserializeMulti(bytes, classes, null);
     }
 
+    @Override
     public <T> T deserialize(byte[] bytes, Class<T> clz, Type type) throws IOException {
         GrowableByteBuffer buffer = new GrowableByteBuffer(ByteBuffer.wrap(bytes));
         return toJavaPojo(deserialize(buffer), clz, type);
     }
 
+    @Override
     public Object[] deserializeMulti(byte[] data, Class<?>[] classes, Type[] types) throws IOException {
         GrowableByteBuffer buffer = new GrowableByteBuffer(ByteBuffer.wrap(data));
         Object[] result = new Object[classes.length];
@@ -570,19 +554,8 @@ public class MotanSerialization implements Serialization {
         return map;
     }
 
-    private Object[] readUnpackedArray(GrowableByteBuffer buffer) throws IOException {
-        List<Object> values = readUnpackedList(buffer);
-        Object[] result = new Object[values.size()];
-        return values.toArray(result);
-    }
-
     private List<Object> readUnpackedList(GrowableByteBuffer buffer) throws IOException {
         List<Object> result = new ArrayList<>(DEFAULT_ARRAY_SIZE);
-        return readUnpackedCollection(buffer, result);
-    }
-
-    private Set<Object> readUnpackedSet(GrowableByteBuffer buffer) throws IOException {
-        Set<Object> result = new HashSet<>(DEFAULT_ARRAY_SIZE);
         return readUnpackedCollection(buffer, result);
     }
 

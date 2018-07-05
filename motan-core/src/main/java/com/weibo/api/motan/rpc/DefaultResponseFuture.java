@@ -268,7 +268,11 @@ public class DefaultResponseFuture implements ResponseFuture {
         }
         if (result != null && returnType != null && result instanceof DeserializableObject) {
             try {
-                result = ((DeserializableObject) result).deserialize(returnType);
+                if (request instanceof DefaultRequest && ((DefaultRequest) request).getMethod() != null) {
+                    result = ((DeserializableObject) result).deserialize(returnType, ((DefaultRequest) request).getMethod().getGenericReturnType());
+                } else {
+                    result = ((DeserializableObject) result).deserialize(returnType);
+                }
             } catch (IOException e) {
                 LoggerUtil.error("deserialize response value fail! return type:" + returnType, e);
                 throw new MotanFrameworkException("deserialize return value fail! deserialize type:" + returnType, e);

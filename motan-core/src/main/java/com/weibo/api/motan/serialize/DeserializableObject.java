@@ -19,7 +19,7 @@
 package com.weibo.api.motan.serialize;
 
 import com.weibo.api.motan.codec.Serialization;
-import com.weibo.api.motan.serialize.motan.MotanSerialization;
+import com.weibo.api.motan.codec.TypeDeserializer;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -49,18 +49,18 @@ public class DeserializableObject {
     }
 
     public <T> T deserialize(Class<T> clz, Type type) throws IOException {
-        if (serialization instanceof MotanSerialization) {
-            return ((MotanSerialization) serialization).deserialize(objBytes, clz, type);
+        if (serialization instanceof TypeDeserializer) {
+            return ((TypeDeserializer) serialization).deserialize(objBytes, clz, type);
         }
         return serialization.deserialize(objBytes, clz);
     }
 
     public Object[] deserializeMulti(Class<?>[] classes, Type[] paramTypes) throws IOException {
         if (classes != null && classes.length > 0) {
-            if (serialization instanceof MotanSerialization) {
-                return ((MotanSerialization) serialization).deserializeMulti(objBytes, classes, paramTypes);
+            if (serialization instanceof TypeDeserializer) {
+                return ((TypeDeserializer) serialization).deserializeMulti(objBytes, classes, paramTypes);
             } else {
-               return serialization.deserializeMulti(objBytes, classes);
+                return serialization.deserializeMulti(objBytes, classes);
             }
         }
         return null;

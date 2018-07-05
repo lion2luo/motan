@@ -16,6 +16,9 @@
 
 package com.weibo.motan.demo.service.model;
 
+import com.weibo.api.motan.serialize.motan.GenericMessage;
+import com.weibo.api.motan.serialize.motan.MessageTemplate;
+
 import java.io.Serializable;
 
 /**
@@ -55,5 +58,25 @@ public class User implements Serializable {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 '}';
+    }
+
+    static {
+        MessageTemplate.registerMessageTemplate(User.class, new MessageTemplate<User>() {
+            @Override
+            public User fromMessage(GenericMessage message) {
+                User result = new User();
+                result.setId(message.getInt(1, 0));
+                result.setName(message.getString(2));
+                return result;
+            }
+
+            @Override
+            public GenericMessage toMessage(User value) {
+                GenericMessage message = new GenericMessage();
+                message.put(1, value.id);
+                message.put(2, value.name);
+                return message;
+            }
+        });
     }
 }

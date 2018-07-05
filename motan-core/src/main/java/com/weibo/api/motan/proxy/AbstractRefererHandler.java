@@ -92,7 +92,11 @@ public class AbstractRefererHandler<T> {
                     Object value = response.getValue();
                     if (value != null && value instanceof DeserializableObject) {
                         try {
-                            value = ((DeserializableObject) value).deserialize(returnType);
+                            if (request instanceof DefaultRequest && ((DefaultRequest) request).getMethod() != null) {
+                                value = ((DeserializableObject) value).deserialize(returnType, ((DefaultRequest) request).getMethod().getGenericReturnType());
+                            } else {
+                                value = ((DeserializableObject) value).deserialize(returnType);
+                            }
                         } catch (IOException e) {
                             LoggerUtil.error("deserialize response value fail! deserialize type:" + returnType, e);
                             throw new MotanFrameworkException("deserialize return value fail! deserialize type:" + returnType, e);

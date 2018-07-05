@@ -42,7 +42,7 @@ public class MotanSerializationTest {
                 result.f1 = message.getBool(1, false);
                 result.f2 = message.getByte(2, (byte) 0);
                 result.f3 = message.getBytes(3, null);
-                result.f4 = message.getString(4, null);
+                result.f4 = message.getString(4);
                 result.f5 = message.getShort(5, (short) 0);
                 result.f6 = message.getInt(6, 0);
                 result.f7 = message.getLong(7, 0L);
