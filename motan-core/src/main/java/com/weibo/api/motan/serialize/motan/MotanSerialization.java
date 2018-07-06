@@ -29,9 +29,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SpiMeta(name = "motan")
 public class MotanSerialization implements Serialization, TypeDeserializer {
+
     public static final byte FALSE = 0;
     public static final byte TRUE = 1;
     public static final byte NULL = 2;
@@ -43,20 +45,24 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
     public static final byte INT64 = 8;
     public static final byte FLOAT32 = 9;
     public static final byte FLOAT64 = 10;
-
     public static final byte UNPACKED_ARRAY = 20;
     public static final byte UNPACKED_ARRAY_END = 21;
-
     public static final byte UNPACKED_MAP = 22;
     public static final byte UNPACKED_MAP_END = 23;
-
     public static final byte PACKED_ARRAY = 24;
     public static final byte PACKED_MAP = 25;
     public static final byte MESSAGE = 26;
-
-
+    private static final Map<Class<?>, MessageTemplate<?>> MESSAGE_TEMPLATES = new ConcurrentHashMap<>();
     private static final int DEFAULT_MAP_SIZE = 16;
     private static final int DEFAULT_ARRAY_SIZE = 16;
+
+    public static void registerMessageTemplate(Class clz, MessageTemplate template) {
+        MESSAGE_TEMPLATES.put(clz, template);
+    }
+
+    public static MessageTemplate getMessageTemplate(Class clz) {
+        return MESSAGE_TEMPLATES.get(clz);
+    }
 
     public static <T> T toJavaPojo(Object obj, Class<T> clz, Type type) {
         if (obj == null) {
@@ -133,7 +139,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         }
 
         if (obj instanceof GenericMessage) {
-            MessageTemplate messageTemplate = MessageTemplate.getMessageTemplate(clz);
+            MessageTemplate messageTemplate = getMessageTemplate(clz);
             if (messageTemplate == null) {
                 throw new MotanServiceException("MotanSerialization not support " + clz);
             }
@@ -318,7 +324,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         }
 
         // ok, if it is not a basic type, use message template converter
-        MessageTemplate messageTemplate = MessageTemplate.getMessageTemplate(clz);
+        MessageTemplate messageTemplate = getMessageTemplate(clz);
         if (messageTemplate != null) {
             writeMessage(buffer, messageTemplate.toMessage(obj));
             return;
@@ -484,7 +490,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         buffer.put(MESSAGE);
         int pos = buffer.position();
         buffer.position(pos + 4);
-        for (Map.Entry<Integer, Object> entry : message.entrySet()) {
+        for (Map.Entry<Integer, Object> entry : message.getFields().entrySet()) {
             buffer.putZigzag32(entry.getKey());
             serialize(entry.getValue(), buffer);
         }
@@ -573,7 +579,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         int startPos = buffer.position();
         int endPos = startPos + size;
         while (buffer.position() < endPos) {
-            message.put(buffer.getZigZag32(), deserialize(buffer));
+            message.putField(buffer.getZigZag32(), deserialize(buffer));
         }
         if (buffer.position() != endPos) {
             throw new MotanServiceException("MotanSerialization deserialize wrong message size, except: " + size + " actual: " + (buffer.position() - startPos));

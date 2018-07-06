@@ -3,7 +3,6 @@ package com.weibo.api.motan.serialize.motan;
 import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Sets;
 import com.weibo.api.motan.codec.Serialization;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.lang.reflect.Type;
@@ -18,72 +17,6 @@ import static org.junit.Assert.*;
  * Description:
  */
 public class MotanSerializationTest {
-    public static class TestObject {
-        public boolean f1;
-        public byte f2;
-        public byte[] f3;
-        public String f4;
-        public short f5;
-        public int f6;
-        public long f7;
-        public float f8;
-        public double f9;
-        public List<String> f10;
-        public Map<String, String> f11;
-        public TestObject f12;
-    }
-
-    @BeforeClass
-    public static void setUp() {
-        MessageTemplate.registerMessageTemplate(TestObject.class, new MessageTemplate<TestObject>() {
-            @Override
-            public TestObject fromMessage(GenericMessage message) {
-                TestObject result = new TestObject();
-                result.f1 = message.getBool(1, false);
-                result.f2 = message.getByte(2, (byte) 0);
-                result.f3 = message.getBytes(3, null);
-                result.f4 = message.getString(4);
-                result.f5 = message.getShort(5, (short) 0);
-                result.f6 = message.getInt(6, 0);
-                result.f7 = message.getLong(7, 0L);
-                result.f8 = message.getFloat(8, 0F);
-                result.f9 = message.getDouble(9, 0D);
-                result.f10 = message.getList(10);
-                result.f11 = message.getMap(11);
-                GenericMessage genericMessage = message.getMessage(12);
-                if (genericMessage != null) {
-                    MessageTemplate<TestObject> messageTemplate = MessageTemplate.getMessageTemplate(TestObject.class);
-                    if (messageTemplate != null) {
-                        result.f12 = messageTemplate.fromMessage(genericMessage);
-                    }
-                }
-                return result;
-            }
-
-            @Override
-            public GenericMessage toMessage(TestObject value) {
-                GenericMessage message = new GenericMessage();
-                message.put(1, value.f1);
-                message.put(2, value.f2);
-                message.put(3, value.f3);
-                message.put(4, value.f4);
-                message.put(5, value.f5);
-                message.put(6, value.f6);
-                message.put(7, value.f7);
-                message.put(8, value.f8);
-                message.put(9, value.f9);
-                message.put(10, value.f10);
-                message.put(11, value.f11);
-                if (value.f12 != null) {
-                    MessageTemplate<TestObject> messageTemplate = MessageTemplate.getMessageTemplate(TestObject.class);
-                    if (messageTemplate != null) {
-                        message.put(12, messageTemplate.toMessage(value.f12));
-                    }
-                }
-                return message;
-            }
-        });
-    }
 
     public static TestObject createDefaultTestObject() {
         TestObject testObject = new TestObject();
@@ -341,6 +274,29 @@ public class MotanSerializationTest {
             assertArrayEquals((Object[]) v, (Object[]) dv);
         } else {
             assertEquals(v, dv);
+        }
+    }
+
+    public static class TestObject {
+        static {
+            MotanSerialization.registerMessageTemplate(TestObject.class, new TestObjectMessageTemplate());
+        }
+
+        public boolean f1;
+        public byte f2;
+        public byte[] f3;
+        public String f4;
+        public short f5;
+        public int f6;
+        public long f7;
+        public float f8;
+        public double f9;
+        public List<String> f10;
+        public Map<String, String> f11;
+        public TestObject f12;
+
+        public static void main(String[] args) {
+            MessageTemplateUtils.generate(TestObject.class, System.getProperty("user.dir") + "/motan-core/src/test/java");
         }
     }
 }

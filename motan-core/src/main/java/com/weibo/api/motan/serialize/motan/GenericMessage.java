@@ -17,7 +17,6 @@
 package com.weibo.api.motan.serialize.motan;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,159 +25,32 @@ import java.util.Map;
  * @author: luominggang
  * Description:
  */
-public class GenericMessage extends HashMap<Integer, Object> {
+public class GenericMessage {
+
+    private Map<Integer, Object> fields;
 
     public GenericMessage() {
+        fields = new HashMap<>();
     }
 
     public GenericMessage(int capacity) {
-        super(capacity);
+        fields = new HashMap<>(capacity);
     }
 
-    public boolean getBool(int field, boolean defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Boolean) {
-            return ((Boolean) value).booleanValue();
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
+    public Map<Integer, Object> getFields() {
+        return fields;
     }
 
-    public byte getByte(int field, byte defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Byte) {
-            return ((Byte) value).byteValue();
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
+    public void setFields(Map<Integer, Object> fields) {
+        this.fields = fields;
     }
 
-    public String getString(int field) {
-        Object value = get(field);
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
+    public Object getField(int index) {
+        return fields.get(index);
     }
 
-    public byte[] getBytes(int field, byte[] defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof byte[]) {
-            return (byte[]) value;
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
+    public void putField(int index, Object field) {
+        fields.put(index, field);
     }
 
-    public short getShort(int field, short defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).shortValue();
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public int getInt(int field, int defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public long getLong(int field, long defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public float getFloat(int field, float defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).floatValue();
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public double getDouble(int field, double defaultValue) {
-        Object value = get(field);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public <T> List<T> getList(int field) {
-        Object value = get(field);
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof List) {
-            return (List<T>) value;
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public <T> T[] getArray(int field) {
-        Object value = get(field);
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof List) {
-            Object[] result = new Object[((List) value).size()];
-            return (T[]) ((List) value).toArray(result);
-        }
-        if (value.getClass().isArray()) {
-            return (T[]) value;
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public <K, V> Map<K, V> getMap(int field) {
-        Object value = get(field);
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Map) {
-            return (Map<K, V>) value;
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
-
-    public GenericMessage getMessage(int field) {
-        Object value = get(field);
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof GenericMessage) {
-            return (GenericMessage) value;
-        }
-        throw new IllegalArgumentException("Unexpected type [" + value.getClass() + "] for field " + field);
-    }
 }
