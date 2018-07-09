@@ -269,7 +269,7 @@ public class DefaultResponseFuture implements ResponseFuture {
         if (result != null && returnType != null && result instanceof DeserializableObject) {
             try {
                 if (request instanceof DefaultRequest && ((DefaultRequest) request).getMethod() != null) {
-                    result = ((DeserializableObject) result).deserialize(returnType, ((DefaultRequest) request).getMethod().getGenericReturnType());
+                    result = ((DeserializableObject) result).deserializeByType(((DefaultRequest) request).getMethod().getGenericReturnType());
                 } else {
                     result = ((DeserializableObject) result).deserialize(returnType);
                 }

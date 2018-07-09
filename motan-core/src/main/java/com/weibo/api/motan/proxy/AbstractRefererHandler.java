@@ -93,7 +93,7 @@ public class AbstractRefererHandler<T> {
                     if (value != null && value instanceof DeserializableObject) {
                         try {
                             if (request instanceof DefaultRequest && ((DefaultRequest) request).getMethod() != null) {
-                                value = ((DeserializableObject) value).deserialize(returnType, ((DefaultRequest) request).getMethod().getGenericReturnType());
+                                value = ((DeserializableObject) value).deserializeByType(((DefaultRequest) request).getMethod().getGenericReturnType());
                             } else {
                                 value = ((DeserializableObject) value).deserialize(returnType);
                             }

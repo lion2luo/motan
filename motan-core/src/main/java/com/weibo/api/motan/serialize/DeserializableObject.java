@@ -20,8 +20,10 @@ package com.weibo.api.motan.serialize;
 
 import com.weibo.api.motan.codec.Serialization;
 import com.weibo.api.motan.codec.TypeDeserializer;
+import com.weibo.api.motan.exception.MotanServiceException;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
@@ -48,21 +50,35 @@ public class DeserializableObject {
         return ret;
     }
 
-    public <T> T deserialize(Class<T> clz, Type type) throws IOException {
+    public <T> T deserializeByType(Type type) throws IOException {
         if (serialization instanceof TypeDeserializer) {
-            return ((TypeDeserializer) serialization).deserialize(objBytes, clz, type);
+            return ((TypeDeserializer) serialization).deserializeByType(objBytes, type);
         }
-        return serialization.deserialize(objBytes, clz);
+        return (T) serialization.deserialize(objBytes, getClassOfType(type));
     }
 
-    public Object[] deserializeMulti(Class<?>[] classes, Type[] paramTypes) throws IOException {
-        if (classes != null && classes.length > 0) {
+    public Object[] deserializeMultiByType(Type[] paramTypes) throws IOException {
+        if (paramTypes != null && paramTypes.length > 0) {
             if (serialization instanceof TypeDeserializer) {
-                return ((TypeDeserializer) serialization).deserializeMulti(objBytes, classes, paramTypes);
+                return ((TypeDeserializer) serialization).deserializeMultiByType(objBytes, paramTypes);
             } else {
+                Class<?>[] classes = new Class[paramTypes.length];
+                for (int i = 0; i < paramTypes.length; i++) {
+                    classes[i] = getClassOfType(paramTypes[i]);
+                }
                 return serialization.deserializeMulti(objBytes, classes);
             }
         }
         return null;
+    }
+
+    public static Class getClassOfType(Type type) {
+        if (type instanceof Class) {
+            return (Class<?>) type;
+        } else if (type instanceof ParameterizedType) {
+            return (Class<?>) ((ParameterizedType) type).getRawType();
+        } else {
+            throw new MotanServiceException("Motan unsupported type " + type);
+        }
     }
 }

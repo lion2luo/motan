@@ -53,7 +53,7 @@ public class MotanSerializationTest {
         b = serialization.serialize(map);
         assertNotNull(b);
         assertTrue(b.length > 0);
-        Map m2 = serialization.deserialize(b, Map.class, new TypeReference<Map<String, String>>() {
+        Map m2 = serialization.deserializeByType(b, new TypeReference<Map<String, String>>() {
         }.getType());
         assertEquals(map.size(), m2.size());
         for (Map.Entry entry : map.entrySet()) {
@@ -94,8 +94,7 @@ public class MotanSerializationTest {
         assertNotNull(b);
         assertTrue(b.length > 0);
 
-        Object[] result = serialization.deserializeMulti(b,
-                new Class[]{String.class, Map.class, byte[].class},
+        Object[] result = serialization.deserializeMultiByType(b,
                 new Type[]{String.class, new TypeReference<Map<String, String>>() {
                 }.getType(), byte[].class});
         assertEquals(3, result.length);
@@ -178,11 +177,11 @@ public class MotanSerializationTest {
         verifyBasic(sArray);
 
         MotanSerialization serialization = new MotanSerialization();
-        List dList = serialization.deserialize(serialization.serialize(sList), List.class, new TypeReference<List<String>>() {
+        List dList = serialization.deserializeByType(serialization.serialize(sList), new TypeReference<List<String>>() {
         }.getType());
         assertEquals(sList, dList);
 
-        Set dSet = serialization.deserialize(serialization.serialize(sList), Set.class, new TypeReference<Set<String>>() {
+        Set dSet = serialization.deserializeByType(serialization.serialize(sList), new TypeReference<Set<String>>() {
         }.getType());
         assertEquals(sSet, dSet);
     }
@@ -193,7 +192,7 @@ public class MotanSerializationTest {
         Map<String, String> v = new HashMap<>();
         v.put("1", "1");
         v.put("2", "2");
-        Map<Object, Object> dv = serialization.deserialize(serialization.serialize(v), Map.class, new TypeReference<Map<String, String>>() {
+        Map<Object, Object> dv = serialization.deserializeByType(serialization.serialize(v), new TypeReference<Map<String, String>>() {
         }.getType());
         assertEquals(v.size(), dv.size());
         Map<Object, Object> ov = new HashMap<>();
@@ -208,7 +207,7 @@ public class MotanSerializationTest {
         ov.put("i", new String[]{"1", "2", "3", "4"});
         ov.put("j", Arrays.asList("1", "2", "3", "4"));
         ov.put("k", Sets.newHashSet("1", "2", "3", "4"));
-        dv = serialization.deserialize(serialization.serialize(ov), Map.class, new TypeReference<Map<Object, Object>>() {
+        dv = serialization.deserializeByType(serialization.serialize(ov), new TypeReference<Map<Object, Object>>() {
         }.getType());
         assertEquals(ov.size(), dv.size());
         for (Map.Entry<Object, Object> entry : ov.entrySet()) {
@@ -251,18 +250,18 @@ public class MotanSerializationTest {
 
         MotanSerialization serialization = new MotanSerialization();
         assertEquals(mapList,
-                serialization.deserialize(serialization.serialize(mapList),
-                        Map.class, new TypeReference<Map<String, List<String>>>() {
+                serialization.deserializeByType(serialization.serialize(mapList),
+                        new TypeReference<Map<String, List<String>>>() {
                         }.getType()));
 
         assertEquals(mapSet,
-                serialization.deserialize(serialization.serialize(mapSet),
-                        Map.class, new TypeReference<Map<String, Set<String>>>() {
+                serialization.deserializeByType(serialization.serialize(mapSet),
+                        new TypeReference<Map<String, Set<String>>>() {
                         }.getType()));
 
         assertEquals(listMap,
-                serialization.deserialize(serialization.serialize(listMap),
-                        List.class, new TypeReference<List<Map<String, String>>>() {
+                serialization.deserializeByType(serialization.serialize(listMap),
+                        new TypeReference<List<Map<String, String>>>() {
                         }.getType()));
     }
 

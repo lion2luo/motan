@@ -64,7 +64,17 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         return MESSAGE_TEMPLATES.get(clz);
     }
 
-    public static <T> T toJavaPojo(Object obj, Class<T> clz, Type type) {
+    public static <T> T toJavaPojo(Object obj, Type type) {
+        Class<?> clz;
+        if (type instanceof Class) {
+            clz = (Class<?>) type;
+            type = null; // for containers (List Map Set), we need generic parameter, here just set to null, it means we don't know
+        } else if (type instanceof ParameterizedType) {
+            clz = (Class<?>) ((ParameterizedType) type).getRawType();
+        } else {
+            throw new MotanServiceException("MotanSerialization unsupported type " + type);
+        }
+
         if (obj == null) {
             return null;
         }
@@ -147,7 +157,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         }
 
         if (clz.isArray() && obj instanceof List) {
-            List<?> objects = toJavaPojoList((List) obj, clz.getComponentType(), null);
+            List<?> objects = toJavaPojoList((List) obj, clz.getComponentType());
             Object[] arrayObj = new Object[objects.size()];
             return (T) objects.toArray(arrayObj);
         }
@@ -162,16 +172,14 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             if (type instanceof ParameterizedType) {
                 Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
                 if (actualTypeArguments.length == 1) {
-                    Type paramType = actualTypeArguments[0];
-                    Class paramClass = getClassOfType(paramType);
-                    return (T) toJavaPojoList((List) obj, paramClass, paramType);
+                    return (T) toJavaPojoList((List) obj, actualTypeArguments[0]);
                 }
             }
         }
 
         if (clz.isAssignableFrom(HashSet.class)) {
             if (!(obj instanceof List)) {
-                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as set");
+                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Set");
             }
             if (type == null) {
                 return (T) new HashSet((List) obj);
@@ -179,16 +187,14 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             if (type instanceof ParameterizedType) {
                 Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
                 if (actualTypeArguments.length == 1) {
-                    Type paramType = actualTypeArguments[0];
-                    Class paramClass = getClassOfType(paramType);
-                    return (T) new HashSet(toJavaPojoList((List) obj, paramClass, paramType));
+                    return (T) new HashSet(toJavaPojoList((List) obj, actualTypeArguments[0]));
                 }
             }
         }
 
         if (clz.isAssignableFrom(HashMap.class)) {
             if (!(obj instanceof Map)) {
-                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as map");
+                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Map");
             }
             if (type == null) {
                 return (T) obj;
@@ -196,13 +202,9 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             if (type instanceof ParameterizedType) {
                 Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
                 if (actualTypeArguments.length == 2) {
-                    Type keyType = actualTypeArguments[0];
-                    Class keyClass = getClassOfType(keyType);
-                    Type valueType = actualTypeArguments[1];
-                    Class valueClass = getClassOfType(valueType);
                     HashMap result = new HashMap();
                     for (Map.Entry<?, ?> entry : ((Map<?, ?>) obj).entrySet()) {
-                        result.put(toJavaPojo(entry.getKey(), keyClass, keyType), toJavaPojo(entry.getValue(), valueClass, valueType));
+                        result.put(toJavaPojo(entry.getKey(), actualTypeArguments[0]), toJavaPojo(entry.getValue(), actualTypeArguments[1]));
                     }
                     return (T) result;
                 }
@@ -211,22 +213,12 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         throw new MotanServiceException("MotanSerialization not support " + clz + " with generic parameter type " + type + ", value type " + obj.getClass());
     }
 
-    public static <T> List<T> toJavaPojoList(List objects, Class<T> type, Type genericType) {
+    public static <T> List<T> toJavaPojoList(List objects, Type type) {
         List<T> result = new ArrayList<>(objects.size());
         for (Object object : objects) {
-            result.add(toJavaPojo(object, type, genericType));
+            result.add((T) toJavaPojo(object, type));
         }
         return result;
-    }
-
-    public static Class<?> getClassOfType(Type type) {
-        if (type instanceof Class) {
-            return (Class) type;
-        } else if (type instanceof ParameterizedType) {
-            return (Class) ((ParameterizedType) type).getRawType();
-        } else {
-            throw new MotanServiceException("MotanSerialization unknown class type " + type);
-        }
     }
 
     @Override
@@ -298,7 +290,6 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             return;
         }
 
-        // this should do before map, because GenericMessage inherit HashMap
         if (clz == GenericMessage.class) {
             writeMessage(buffer, (GenericMessage) obj);
             return;
@@ -334,32 +325,26 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
 
     @Override
     public <T> T deserialize(byte[] bytes, Class<T> clz) throws IOException {
-        return deserialize(bytes, clz, null);
+        return deserializeByType(bytes, clz);
     }
 
     @Override
     public Object[] deserializeMulti(byte[] bytes, Class<?>[] classes) throws IOException {
-        return deserializeMulti(bytes, classes, null);
+        return deserializeMulti(bytes, classes);
     }
 
     @Override
-    public <T> T deserialize(byte[] bytes, Class<T> clz, Type type) throws IOException {
+    public <T> T deserializeByType(byte[] bytes, Type type) throws IOException {
         GrowableByteBuffer buffer = new GrowableByteBuffer(ByteBuffer.wrap(bytes));
-        return toJavaPojo(deserialize(buffer), clz, type);
+        return toJavaPojo(deserialize(buffer), type);
     }
 
     @Override
-    public Object[] deserializeMulti(byte[] data, Class<?>[] classes, Type[] types) throws IOException {
+    public Object[] deserializeMultiByType(byte[] data, Type[] types) throws IOException {
         GrowableByteBuffer buffer = new GrowableByteBuffer(ByteBuffer.wrap(data));
-        Object[] result = new Object[classes.length];
-        if (types == null) {
-            for (int i = 0; i < classes.length; i++) {
-                result[i] = toJavaPojo(deserialize(buffer), classes[i], null);
-            }
-        } else {
-            for (int i = 0; i < classes.length; i++) {
-                result[i] = toJavaPojo(deserialize(buffer), classes[i], types[i]);
-            }
+        Object[] result = new Object[types.length];
+        for (int i = 0; i < types.length; i++) {
+            result[i] = toJavaPojo(deserialize(buffer), types[i]);
         }
         return result;
     }

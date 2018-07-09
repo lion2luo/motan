@@ -27,7 +27,7 @@ import java.lang.reflect.Type;
  */
 public interface TypeDeserializer {
 
-    <T> T deserialize(byte[] bytes, Class<T> clz, Type type) throws IOException;
+    <T> T deserializeByType(byte[] bytes, Type type) throws IOException;
 
-    Object[] deserializeMulti(byte[] data, Class<?>[] classes, Type[] types) throws IOException;
+    Object[] deserializeMultiByType(byte[] data, Type[] types) throws IOException;
 }
