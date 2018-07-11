@@ -77,6 +77,8 @@ public class Motan2RpcClient {
         System.out.println(service.listUser(userList));
         System.out.println(service.mapUser(userMap));
 
+        System.out.println(service.rename(u1, "test"));
+
         System.out.println("motan demo is finish.");
         System.exit(0);
     }
