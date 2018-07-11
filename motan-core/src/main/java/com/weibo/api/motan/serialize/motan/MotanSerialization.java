@@ -66,7 +66,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
 
     public static <T> T toJavaPojo(Object obj, Type type) {
         Class<?> clz;
-        Type genericType = null;
+        Type genericType;
         if (type instanceof Class) {
             clz = (Class<?>) type;
             genericType = null; // for containers (List Map Set), we need generic parameter, here just set to null, it means we don't know
@@ -75,7 +75,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             genericType = type;
         } else {
             // TODO: for WildType (<?>), GenericArrayType, TypeVariable <T extends ObjectClass>
-            throw new MotanServiceException("MotanSerialization unsupported type " + genericType);
+            throw new MotanServiceException("MotanSerialization unsupported type " + type);
         }
 
         if (obj == null) {
@@ -168,7 +168,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             } else if (clz.isAssignableFrom(ArrayList.class)) {
                 result = new ArrayList<>(objects.size());
             } else {
-                throw new MotanServiceException("MotanSerialization not support " + clz + " with generic parameter type " + genericType + ", value type " + obj.getClass());
+                throw new MotanServiceException("MotanSerialization unsupported type " + type);
             }
             toJavaPojoCollection(objects, genericType, result);
             return (T) result;
@@ -185,7 +185,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             } else if (clz.isAssignableFrom(HashSet.class)) {
                 result = new HashSet<>(objects.size());
             } else {
-                throw new MotanServiceException("MotanSerialization not support " + clz + " with generic parameter type " + genericType + ", value type " + obj.getClass());
+                throw new MotanServiceException("MotanSerialization unsupported type " + type);
             }
             toJavaPojoCollection(objects, genericType, result);
             return (T) result;
@@ -202,7 +202,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             } else if (clz.isAssignableFrom(HashMap.class)) {
                 result = new HashMap<>(((Map) obj).size());
             } else {
-                throw new MotanServiceException("MotanSerialization not support " + clz + " with generic parameter type " + genericType + ", value type " + obj.getClass());
+                throw new MotanServiceException("MotanSerialization unsupported type " + type);
             }
             Type keyType = Object.class; // for unknown generic parameter type
             Type valueType = Object.class;
@@ -225,12 +225,12 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             }
             MessageTemplate messageTemplate = getMessageTemplate(clz);
             if (messageTemplate == null) {
-                throw new MotanServiceException("MotanSerialization not support " + clz);
+                throw new MotanServiceException("MotanSerialization unsupported type " + clz);
             }
             return (T) messageTemplate.fromMessage((GenericMessage) obj);
         }
 
-        throw new MotanServiceException("MotanSerialization not support " + clz + " with generic parameter type " + genericType + ", value type " + obj.getClass());
+        throw new MotanServiceException("MotanSerialization not support receiver type " + type + " with value type " + obj.getClass());
     }
 
     private static void toJavaPojoCollection(List objects, Type type, Collection target) {
