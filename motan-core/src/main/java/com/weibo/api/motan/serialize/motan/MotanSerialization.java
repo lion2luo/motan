@@ -147,20 +147,14 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             return (T) obj;
         }
 
-        if (clz.isArray()) {
-            if (!(obj instanceof List)) {
-                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Array");
-            }
+        if (clz.isArray() && obj instanceof List) {
             List<?> result = new ArrayList<>(((List) obj).size());
             toJavaPojoCollection((List) obj, clz.getComponentType(), result);
             Object[] arrayObj = new Object[result.size()];
             return (T) result.toArray(arrayObj);
         }
 
-        if (Collection.class.isAssignableFrom(clz)) {
-            if (!(obj instanceof List)) {
-                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Collection");
-            }
+        if (Collection.class.isAssignableFrom(clz) && obj instanceof List) {
             if (hasOnlyBasicType(type)) {
                 return (T) obj;
             }
@@ -189,10 +183,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             return (T) result;
         }
 
-        if (Map.class.isAssignableFrom(clz)) {
-            if (!(obj instanceof Map)) {
-                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Map");
-            }
+        if (Map.class.isAssignableFrom(clz) && obj instanceof Map) {
             if (hasOnlyBasicType(type)) {
                 return (T) obj;
             }
