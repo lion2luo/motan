@@ -74,7 +74,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             clz = (Class<?>) ((ParameterizedType) type).getRawType();
             genericType = type;
         } else {
-            // TODO: for WildType (<?>), GenericArrayType, TypeVariable <T extends ObjectClass>
+            // TODO: for WildcardType (<?>), GenericArrayType, TypeVariable <T extends ObjectClass>
             throw new MotanServiceException("MotanSerialization unsupported type " + type);
         }
 
@@ -147,62 +147,67 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
             return (T) obj;
         }
 
-        if (clz.isArray() && obj instanceof List) {
+        if (clz.isArray()) {
             if (!(obj instanceof List)) {
                 throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Array");
             }
-            List<?> objects = new ArrayList<>(((List) obj).size());
-            toJavaPojoCollection((List) obj, clz.getComponentType(), objects);
-            Object[] arrayObj = new Object[objects.size()];
-            return (T) objects.toArray(arrayObj);
+            List<?> result = new ArrayList<>(((List) obj).size());
+            toJavaPojoCollection((List) obj, clz.getComponentType(), result);
+            Object[] arrayObj = new Object[result.size()];
+            return (T) result.toArray(arrayObj);
         }
 
-        if (List.class.isAssignableFrom(clz)) {
+        if (Collection.class.isAssignableFrom(clz)) {
             if (!(obj instanceof List)) {
-                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as List");
+                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Collection");
             }
-            List<?> result;
+            if (hasOnlyBasicType(type)) {
+                return (T) obj;
+            }
+            Collection<?> result;
             List objects = (List) obj;
-            if (clz.isAssignableFrom(LinkedList.class)) {
-                result = new LinkedList<>();
-            } else if (clz.isAssignableFrom(ArrayList.class)) {
+            if (clz.isAssignableFrom(ArrayList.class)) {
+                // default use ArrayList for List
                 result = new ArrayList<>(objects.size());
-            } else {
-                throw new MotanServiceException("MotanSerialization unsupported type " + type);
-            }
-            toJavaPojoCollection(objects, genericType, result);
-            return (T) result;
-        }
-
-        if (Set.class.isAssignableFrom(clz)) {
-            if (!(obj instanceof List)) {
-                throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Set");
-            }
-            Set<?> result;
-            List objects = (List) obj;
-            if (clz.isAssignableFrom(TreeSet.class)) {
-                result = new TreeSet<>();
+            } else if (clz.isAssignableFrom(LinkedList.class)) {
+                result = new LinkedList<>();
             } else if (clz.isAssignableFrom(HashSet.class)) {
+                // default use HashSet for Set
                 result = new HashSet<>(objects.size());
+            } else if (clz.isAssignableFrom(TreeSet.class)) {
+                result = new TreeSet<>();
+            } else if (clz.isAssignableFrom(LinkedHashSet.class)) {
+                result = new LinkedHashSet<>(objects.size());
             } else {
-                throw new MotanServiceException("MotanSerialization unsupported type " + type);
+                try {
+                    result = (Collection) clz.newInstance();
+                } catch (Exception e) {
+                    throw new MotanServiceException("MotanSerialization unsupported type " + type);
+                }
             }
             toJavaPojoCollection(objects, genericType, result);
             return (T) result;
         }
 
         if (Map.class.isAssignableFrom(clz)) {
-            // TODO: for performance we should do more type check to skip object copy
             if (!(obj instanceof Map)) {
                 throw new MotanServiceException("MotanSerialization not support " + obj.getClass() + " as Map");
             }
+            if (hasOnlyBasicType(type)) {
+                return (T) obj;
+            }
             Map result;
-            if (clz.isAssignableFrom(TreeMap.class)) {
-                result = new TreeMap<>();
-            } else if (clz.isAssignableFrom(HashMap.class)) {
+            if (clz.isAssignableFrom(HashMap.class)) {
+                // default use HashMap for Map
                 result = new HashMap<>(((Map) obj).size());
+            } else if (clz.isAssignableFrom(TreeMap.class)) {
+                result = new TreeMap<>();
             } else {
-                throw new MotanServiceException("MotanSerialization unsupported type " + type);
+                try {
+                    result = (Map) clz.newInstance();
+                } catch (Exception e) {
+                    throw new MotanServiceException("MotanSerialization unsupported type " + type);
+                }
             }
             Type keyType = Object.class; // for unknown generic parameter type
             Type valueType = Object.class;
@@ -213,6 +218,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
                     valueType = actualTypeArguments[1];
                 }
             }
+            // TODO: for some Map implementations, key or value can not be null, this may cause exception
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) obj).entrySet()) {
                 result.put(toJavaPojo(entry.getKey(), keyType), toJavaPojo(entry.getValue(), valueType));
             }
@@ -234,7 +240,6 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
     }
 
     private static void toJavaPojoCollection(List objects, Type type, Collection target) {
-        // TODO: for performance we should do more type check to skip object copy
         Type parameterType = Object.class; // for unknown generic parameter type
         if (type instanceof ParameterizedType) {
             Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
@@ -244,6 +249,39 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         }
         for (Object object : objects) {
             target.add(toJavaPojo(object, parameterType));
+        }
+    }
+
+    private static boolean hasOnlyBasicType(Type type) {
+        // TODO: for type compatible, here we can not accept number types
+        if (type instanceof Class) {
+            return (((Class) type).isPrimitive() && type != char.class)
+                    || type == Object.class
+                    || type == String.class
+                    || type == Byte.class
+                    || type == Short.class
+                    || type == Integer.class
+                    || type == Long.class
+                    || type == Float.class
+                    || type == Double.class
+                    || type == Boolean.class
+                    || type == byte[].class
+                    || type == Map.class || ((Class) type).isAssignableFrom(HashMap.class)
+                    || type == List.class || ((Class) type).isAssignableFrom(ArrayList.class);
+        } else if (type instanceof ParameterizedType) {
+            Type rawType = ((ParameterizedType) type).getRawType();
+            Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
+            if (!hasOnlyBasicType(rawType)) {
+                return false;
+            }
+            for (Type actualTypeArgument : actualTypeArguments) {
+                if (!hasOnlyBasicType(actualTypeArgument)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return true;
         }
     }
 
