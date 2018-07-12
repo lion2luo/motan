@@ -1,10 +1,10 @@
 package com.weibo.api.motan.serialize.motan;
 
-import com.alibaba.fastjson.TypeReference;
 import com.google.common.collect.Sets;
 import com.weibo.api.motan.codec.Serialization;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -39,7 +39,7 @@ public class MotanSerializationTest {
     @Test
     public void serialize() throws Exception {
         String s = "hello";
-        MotanSerialization serialization = new MotanSerialization();
+        MotanObjectSerialization serialization = new MotanObjectSerialization();
         byte[] b = serialization.serialize(s);
         assertNotNull(b);
         assertTrue(b.length > 0);
@@ -80,7 +80,7 @@ public class MotanSerializationTest {
 
     @Test
     public void testSerializeMulti() throws Exception {
-        MotanSerialization serialization = new MotanSerialization();
+        MotanObjectSerialization serialization = new MotanObjectSerialization();
         Object[] objects = new Object[3];
         objects[0] = "teststring";
         Map<String, String> map = new HashMap<>();
@@ -176,7 +176,7 @@ public class MotanSerializationTest {
         verifyBasic(sSet);
         verifyBasic(sArray);
 
-        MotanSerialization serialization = new MotanSerialization();
+        MotanObjectSerialization serialization = new MotanObjectSerialization();
         List dList = serialization.deserializeByType(serialization.serialize(sList), new TypeReference<List<String>>() {
         }.getType());
         assertEquals(sList, dList);
@@ -188,7 +188,7 @@ public class MotanSerializationTest {
 
     @Test
     public void testMap() throws Exception {
-        MotanSerialization serialization = new MotanSerialization();
+        MotanObjectSerialization serialization = new MotanObjectSerialization();
         Map<String, String> v = new HashMap<>();
         v.put("1", "1");
         v.put("2", "2");
@@ -248,7 +248,7 @@ public class MotanSerializationTest {
             }
         });
 
-        MotanSerialization serialization = new MotanSerialization();
+        MotanObjectSerialization serialization = new MotanObjectSerialization();
         assertEquals(mapList,
                 serialization.deserializeByType(serialization.serialize(mapList),
                         new TypeReference<Map<String, List<String>>>() {
@@ -266,7 +266,7 @@ public class MotanSerializationTest {
     }
 
     private void verifyBasic(Object v) throws Exception {
-        Serialization serialization = new MotanSerialization();
+        Serialization serialization = new MotanObjectSerialization();
         byte[] bytes = serialization.serialize(v);
         Object dv = serialization.deserialize(bytes, v.getClass());
         if (v.getClass().isArray()) {
@@ -279,6 +279,75 @@ public class MotanSerializationTest {
     public static class TestObject {
         static {
             MotanSerialization.registerMessageTemplate(TestObject.class, new TestObjectMessageTemplate());
+            SerializerFactory.registerSerializer(TestObject.class, new AbstractMessageSerializer<TestObject>() {
+                @Override
+                public Map<Integer, Object> getFields(TestObject value) {
+                    Map<Integer, Object> fields = new HashMap<>();
+                    fields.put(1, value.f1);
+                    fields.put(2, value.f2);
+                    fields.put(3, value.f3);
+                    fields.put(4, value.f4);
+                    fields.put(5, value.f5);
+                    fields.put(6, value.f6);
+                    fields.put(7, value.f7);
+                    fields.put(8, value.f8);
+                    fields.put(9, value.f9);
+                    fields.put(10, value.f10);
+                    fields.put(11, value.f11);
+                    fields.put(12, value.f12);
+                    return fields;
+                }
+            });
+            SerializerFactory.registerDeserializer(TestObject.class, new AbstractMessageDeserializer<TestObject>() {
+
+                @Override
+                public void readField(MotanObjectInput in, int fieldNumber, TestObject result) throws IOException {
+                    switch (fieldNumber) {
+                        case 1:
+                            result.f1 = in.readBool();
+                            break;
+                        case 2:
+                            result.f2 = in.readByte();
+                            break;
+                        case 3:
+                            result.f3 = in.readBytes();
+                            break;
+                        case 4:
+                            result.f4 = in.readString();
+                            break;
+                        case 5:
+                            result.f5 = in.readShort();
+                            break;
+                        case 6:
+                            result.f6 = in.readInt();
+                            break;
+                        case 7:
+                            result.f7 = in.readLong();
+                            break;
+                        case 8:
+                            result.f8 = in.readFloat();
+                            break;
+                        case 9:
+                            result.f9 = in.readDouble();
+                            break;
+                        case 10:
+                            result.f10 = (List<String>) in.readObject(new TypeReference<List<String>>() {
+                            }.getType());
+                            break;
+                        case 11:
+                            result.f11 = (Map<String, String>) in.readObject(new TypeReference<Map<String, String>>() {
+                            }.getType());
+                            break;
+                        case 12:
+                            result.f12 = (TestObject) in.readObject(TestObject.class);
+                    }
+                }
+
+                @Override
+                public TestObject newInstance() {
+                    return new TestObject();
+                }
+            });
         }
 
         public boolean f1;
