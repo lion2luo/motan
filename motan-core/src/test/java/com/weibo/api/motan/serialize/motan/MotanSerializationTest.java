@@ -297,8 +297,6 @@ public class MotanSerializationTest {
                     fields.put(12, value.f12);
                     return fields;
                 }
-            });
-            SerializerFactory.registerDeserializer(TestObject.class, new AbstractMessageDeserializer<TestObject>() {
 
                 @Override
                 public void readField(MotanObjectInput in, int fieldNumber, TestObject result) throws IOException {

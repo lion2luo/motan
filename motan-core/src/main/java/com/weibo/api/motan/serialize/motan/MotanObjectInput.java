@@ -261,11 +261,11 @@ public class MotanObjectInput {
             }
             return readUnpackedArray(clz);
         }
-        Deserializer deserializer = SerializerFactory.getDeserializer(clz);
-        if (deserializer == null) {
+        Serializer serializer = SerializerFactory.getSerializer(clz);
+        if (serializer == null) {
             throw new MotanServiceException("MotanSerialization unsupported type: " + type);
         }
-        return deserializer.deserialize(this, type);
+        return serializer.deserialize(this, type);
     }
 
     private byte[] readBytesNoTag() throws IOException {
