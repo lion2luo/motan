@@ -44,21 +44,22 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
         if (typeTag != MotanType.MESSAGE) {
             throw new MotanServiceException(typeTag + " can not as generic message");
         }
-        GrowableByteBuffer inputBuffer = in.getBuffer();
-        int size = MotanObjectInput.getAndCheckSize(inputBuffer);
-        int startPos = in.getBuffer().position();
+        GrowableByteBuffer inBuffer = in.getBuffer();
+        int size = MotanObjectInput.getAndCheckSize(inBuffer);
+        int startPos = inBuffer.position();
         int endPos = startPos + size;
         T result = newInstance();
-        while (inputBuffer.position() < endPos) {
-            readField(in, inputBuffer.getZigZag32(), result);
+        while (inBuffer.position() < endPos) {
+            readField(in, inBuffer.getZigZag32(), result);
         }
-        if (inputBuffer.position() != endPos) {
-            throw new MotanServiceException("MotanSerialization deserialize wrong message size, except: " + size + " actual: " + (inputBuffer.position() - startPos));
+        if (inBuffer.position() != endPos) {
+            throw new MotanServiceException("MotanSerialization deserialize wrong message size, except: " + size + " actual: " + (inBuffer.position() - startPos));
         }
         return result;
     }
 
+    public abstract T newInstance();
+
     public abstract void readField(MotanObjectInput in, int fieldNumber, T result) throws IOException;
 
-    public abstract T newInstance();
 }

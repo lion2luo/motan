@@ -30,6 +30,22 @@ public class MotanObjectInput {
         }
     }
 
+    static int getAndCheckZigZagSize(GrowableByteBuffer buffer) throws IOException {
+        int size = buffer.getZigZag32();
+        if (size > buffer.remaining()) {
+            throw new MotanServiceException("MotanSerialization deserialize fail! buffer not enough!need size:" + size);
+        }
+        return size;
+    }
+
+    static int getAndCheckSize(GrowableByteBuffer buffer) throws IOException {
+        int size = buffer.getInt();
+        if (size > buffer.remaining()) {
+            throw new MotanServiceException("MotanSerialization deserialize fail! buffer not enough!need size:" + size);
+        }
+        return size;
+    }
+
     private GrowableByteBuffer buffer;
 
     public MotanObjectInput(GrowableByteBuffer buffer) {
@@ -38,6 +54,10 @@ public class MotanObjectInput {
 
     public byte readTypeTag() {
         return buffer.get();
+    }
+
+    public void unreadTypeTag() {
+        buffer.position(buffer.position() - 1);
     }
 
     public byte[] readBytes() throws IOException {
@@ -62,11 +82,9 @@ public class MotanObjectInput {
         }
     }
 
-    public Boolean readBool() throws IOException {
+    public boolean readBool() throws IOException {
         byte typeTag = readTypeTag();
-        if (typeTag == MotanType.NULL) {
-            return null;
-        } else if (typeTag == MotanType.TRUE) {
+        if (typeTag == MotanType.TRUE) {
             return true;
         } else if (typeTag == MotanType.FALSE) {
             return false;
@@ -75,74 +93,28 @@ public class MotanObjectInput {
         }
     }
 
-    private Number readNumber() throws IOException {
-        byte typeTag = readTypeTag();
-        switch (typeTag) {
-            case MotanType.NULL:
-                return null;
-            case MotanType.BYTE:
-                return buffer.get();
-            case MotanType.INT16:
-                return buffer.getShort();
-            case MotanType.INT32:
-                return buffer.getZigZag32();
-            case MotanType.INT64:
-                return buffer.getZigZag64();
-            case MotanType.FLOAT32:
-                return buffer.getFloat();
-            case MotanType.FLOAT64:
-                return buffer.getDouble();
-            default:
-                throw new MotanServiceException(typeTag + " can not as Number");
-        }
+    public byte readByte() throws IOException {
+        return readNumber().byteValue();
     }
 
-    public Byte readByte() throws IOException {
-        Number number = readNumber();
-        if (number == null) {
-            return null;
-        }
-        return number.byteValue();
+    public short readShort() throws IOException {
+        return readNumber().shortValue();
     }
 
-    public Short readShort() throws IOException {
-        Number number = readNumber();
-        if (number == null) {
-            return null;
-        }
-        return number.shortValue();
+    public int readInt() throws IOException {
+        return readNumber().intValue();
     }
 
-    public Integer readInt() throws IOException {
-        Number number = readNumber();
-        if (number == null) {
-            return null;
-        }
-        return number.intValue();
+    public long readLong() throws IOException {
+        return readNumber().longValue();
     }
 
-    public Long readLong() throws IOException {
-        Number number = readNumber();
-        if (number == null) {
-            return null;
-        }
-        return number.longValue();
+    public float readFloat() throws IOException {
+        return readNumber().floatValue();
     }
 
-    public Float readFloat() throws IOException {
-        Number number = readNumber();
-        if (number == null) {
-            return null;
-        }
-        return number.floatValue();
-    }
-
-    public Double readDouble() throws IOException {
-        Number number = readNumber();
-        if (number == null) {
-            return null;
-        }
-        return number.doubleValue();
+    public double readDouble() throws IOException {
+        return readNumber().doubleValue();
     }
 
     public Map readUnpackedMap(Type type, Map result) throws IOException {
@@ -164,8 +136,8 @@ public class MotanObjectInput {
                 valueType = actualTypeArguments[1];
             }
         }
-        while (buffer.get() != MotanType.UNPACKED_MAP_END) {
-            buffer.position(buffer.position() - 1);
+        while (readTypeTag() != MotanType.UNPACKED_MAP_END) {
+            unreadTypeTag();
             result.put(readObject(keyType), readObject(valueType));
         }
         return result;
@@ -181,8 +153,8 @@ public class MotanObjectInput {
         }
         List result = new ArrayList<>(DEFAULT_ARRAY_SIZE);
         Object[] arrayObj = new Object[result.size()];
-        while (buffer.get() != MotanType.UNPACKED_ARRAY_END) {
-            buffer.position(buffer.position() - 1);
+        while (readTypeTag() != MotanType.UNPACKED_ARRAY_END) {
+            unreadTypeTag();
             result.add(readObject(((Class) type).getComponentType()));
         }
         return result.toArray(arrayObj);
@@ -203,8 +175,8 @@ public class MotanObjectInput {
                 elementType = actualTypeArguments[0];
             }
         }
-        while (buffer.get() != MotanType.UNPACKED_ARRAY_END) {
-            buffer.position(buffer.position() - 1);
+        while (readTypeTag() != MotanType.UNPACKED_ARRAY_END) {
+            unreadTypeTag();
             collection.add(readObject(elementType));
         }
         return collection;
@@ -212,18 +184,16 @@ public class MotanObjectInput {
 
     public Object readObject() throws IOException {
         byte typeTag = readTypeTag();
-        if (typeTag == MotanType.TRUE) {
-            return Boolean.TRUE;
-        } else if (typeTag == MotanType.FALSE) {
-            return Boolean.FALSE;
+        if (typeTag == MotanType.NULL) {
+            return null;
         }
-
-        buffer.position(buffer.position() - 1);
+        unreadTypeTag();
         switch (typeTag) {
+            case MotanType.TRUE:
+            case MotanType.FALSE:
+                return readBool();
             case MotanType.BYTE:
                 return readByte();
-            case MotanType.NULL:
-                return null;
             case MotanType.STRING:
                 return readString();
             case MotanType.BYTE_ARRAY:
@@ -261,6 +231,11 @@ public class MotanObjectInput {
             }
             return readUnpackedArray(clz);
         }
+        byte typeTag = readTypeTag();
+        if (typeTag == MotanType.NULL) {
+            return null;
+        }
+        unreadTypeTag();
         Serializer serializer = SerializerFactory.getSerializer(clz);
         if (serializer == null) {
             throw new MotanServiceException("MotanSerialization unsupported type: " + type);
@@ -275,24 +250,28 @@ public class MotanObjectInput {
         return b;
     }
 
+    private Number readNumber() throws IOException {
+        byte typeTag = readTypeTag();
+        switch (typeTag) {
+            case MotanType.BYTE:
+                return buffer.get();
+            case MotanType.INT16:
+                return buffer.getShort();
+            case MotanType.INT32:
+                return buffer.getZigZag32();
+            case MotanType.INT64:
+                return buffer.getZigZag64();
+            case MotanType.FLOAT32:
+                return buffer.getFloat();
+            case MotanType.FLOAT64:
+                return buffer.getDouble();
+            default:
+                throw new MotanServiceException(typeTag + " can not as Number");
+        }
+    }
+
     // The following package visible methods are for message deserialize. See AbstractMessageDeserializer
     GrowableByteBuffer getBuffer() {
         return buffer;
-    }
-
-    static int getAndCheckZigZagSize(GrowableByteBuffer buffer) throws IOException {
-        int size = buffer.getZigZag32();
-        if (size > buffer.remaining()) {
-            throw new MotanServiceException("MotanSerialization deserialize fail! buffer not enough!need size:" + size);
-        }
-        return size;
-    }
-
-    static int getAndCheckSize(GrowableByteBuffer buffer) throws IOException {
-        int size = buffer.getInt();
-        if (size > buffer.remaining()) {
-            throw new MotanServiceException("MotanSerialization deserialize fail! buffer not enough!need size:" + size);
-        }
-        return size;
     }
 }
