@@ -16,10 +16,13 @@
 
 package com.weibo.motan.demo.service.model;
 
-import com.weibo.api.motan.serialize.motan.MessageTemplateUtils;
-import com.weibo.api.motan.serialize.motan.MotanSerialization;
+import com.weibo.api.motan.config.springsupport.annotation.MotanService;
+import com.weibo.api.motan.serialize.motan.*;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by zhanglei28 on 2017/8/30.
@@ -27,6 +30,34 @@ import java.io.Serializable;
 public class User implements Serializable {
     static {
         MotanSerialization.registerMessageTemplate(User.class, new UserMessageTemplate());
+        SerializerFactory.registerSerializer(User.class, new AbstractMessageSerializer<User>() {
+            @Override
+            public Map<Integer, Object> getFields(User value) {
+                Map<Integer, Object> fields = new HashMap<>();
+                fields.put(1, value.id);
+                fields.put(2, value.name);
+                return fields;
+            }
+
+            @Override
+            public User newInstance() {
+                return new User();
+            }
+
+            @Override
+            public void readField(MotanObjectInput in, int fieldNumber, User result) throws IOException {
+                switch (fieldNumber) {
+                    case 1:
+                        result.setId(in.readInt());
+                        break;
+                    case 2:
+                        result.setName(in.readString());
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
     }
 
     private int id;

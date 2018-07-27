@@ -4,6 +4,7 @@ import com.weibo.api.motan.exception.MotanServiceException;
 import com.weibo.api.motan.protocol.v2motan.GrowableByteBuffer;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -117,12 +118,52 @@ public class MotanObjectInput {
         return readNumber().doubleValue();
     }
 
-    public Map readUnpackedMap(Type type, Map result) throws IOException {
+    public Object[] readArray(Class type) throws IOException {
         byte typeTag = readTypeTag();
         if (typeTag == MotanType.NULL) {
             return null;
         }
-        if (typeTag != MotanType.UNPACKED_MAP) {
+        if (typeTag != MotanType.ARRAY) {
+            throw new MotanServiceException(typeTag + " can not as Array");
+        }
+        Class elementType = type.getComponentType();
+        List result = new ArrayList<>(DEFAULT_ARRAY_SIZE);
+        while (readTypeTag() != MotanType.ARRAY_END) {
+            unreadTypeTag();
+            result.add(readObject(elementType));
+        }
+        Object[] arrayObj = (Object[]) Array.newInstance(elementType, result.size());
+        return result.toArray(arrayObj);
+    }
+
+    public Collection readCollection(Type type, Collection collection) throws IOException {
+        byte typeTag = readTypeTag();
+        if (typeTag == MotanType.NULL) {
+            return null;
+        }
+        if (typeTag != MotanType.ARRAY) {
+            throw new MotanServiceException(typeTag + " can not as Array");
+        }
+        Type elementType = Object.class; // for unknown generic parameter type
+        if (type instanceof ParameterizedType) {
+            Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
+            if (actualTypeArguments.length == 1) {
+                elementType = actualTypeArguments[0];
+            }
+        }
+        while (readTypeTag() != MotanType.ARRAY_END) {
+            unreadTypeTag();
+            collection.add(readObject(elementType));
+        }
+        return collection;
+    }
+
+    public Map readMap(Type type, Map result) throws IOException {
+        byte typeTag = readTypeTag();
+        if (typeTag == MotanType.NULL) {
+            return null;
+        }
+        if (typeTag != MotanType.MAP) {
             throw new MotanServiceException(typeTag + " can not as Map");
         }
         Type[] classAndType = resolveType(type);
@@ -136,50 +177,11 @@ public class MotanObjectInput {
                 valueType = actualTypeArguments[1];
             }
         }
-        while (readTypeTag() != MotanType.UNPACKED_MAP_END) {
+        while (readTypeTag() != MotanType.MAP_END) {
             unreadTypeTag();
             result.put(readObject(keyType), readObject(valueType));
         }
         return result;
-    }
-
-    public Object[] readUnpackedArray(Type type) throws IOException {
-        byte typeTag = readTypeTag();
-        if (typeTag == MotanType.NULL) {
-            return null;
-        }
-        if (typeTag != MotanType.UNPACKED_ARRAY) {
-            throw new MotanServiceException(typeTag + " can not as Array");
-        }
-        List result = new ArrayList<>(DEFAULT_ARRAY_SIZE);
-        Object[] arrayObj = new Object[result.size()];
-        while (readTypeTag() != MotanType.UNPACKED_ARRAY_END) {
-            unreadTypeTag();
-            result.add(readObject(((Class) type).getComponentType()));
-        }
-        return result.toArray(arrayObj);
-    }
-
-    public Collection readUnpackedCollection(Type type, Collection collection) throws IOException {
-        byte typeTag = readTypeTag();
-        if (typeTag == MotanType.NULL) {
-            return null;
-        }
-        if (typeTag != MotanType.UNPACKED_ARRAY) {
-            throw new MotanServiceException(typeTag + " can not as Array");
-        }
-        Type elementType = Object.class; // for unknown generic parameter type
-        if (type instanceof ParameterizedType) {
-            Type[] actualTypeArguments = ((ParameterizedType) type).getActualTypeArguments();
-            if (actualTypeArguments.length == 1) {
-                elementType = actualTypeArguments[0];
-            }
-        }
-        while (readTypeTag() != MotanType.UNPACKED_ARRAY_END) {
-            unreadTypeTag();
-            collection.add(readObject(elementType));
-        }
-        return collection;
     }
 
     public Object readObject() throws IOException {
@@ -208,10 +210,10 @@ public class MotanObjectInput {
                 return readFloat();
             case MotanType.FLOAT64:
                 return readDouble();
-            case MotanType.UNPACKED_MAP:
-                return readUnpackedMap(HashMap.class, new HashMap(DEFAULT_MAP_SIZE));
-            case MotanType.UNPACKED_ARRAY:
-                return readUnpackedCollection(ArrayList.class, new ArrayList(DEFAULT_ARRAY_SIZE));
+            case MotanType.MAP:
+                return readMap(HashMap.class, new HashMap(DEFAULT_MAP_SIZE));
+            case MotanType.ARRAY:
+                return readCollection(ArrayList.class, new ArrayList(DEFAULT_ARRAY_SIZE));
             case MotanType.MESSAGE:
                 return readObject(GenericMessage.class);
             default:
@@ -229,7 +231,7 @@ public class MotanObjectInput {
             if (clz == byte[].class) {
                 return readBytes();
             }
-            return readUnpackedArray(clz);
+            return readArray(clz);
         }
         byte typeTag = readTypeTag();
         if (typeTag == MotanType.NULL) {

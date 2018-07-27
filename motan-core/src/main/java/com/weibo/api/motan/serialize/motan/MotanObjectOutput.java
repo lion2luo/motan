@@ -83,41 +83,41 @@ public class MotanObjectOutput {
         buffer.putDouble(value);
     }
 
-    public void writeUnpackedArray(Object[] value) throws IOException {
+    public void writeArray(Object[] value) throws IOException {
         if (value == null) {
             writeNull();
             return;
         }
-        buffer.put(MotanType.UNPACKED_ARRAY);
-        for (int i = 0; i < value.length; i++) {
-            writeObject(value[i]);
-        }
-        buffer.put(MotanType.UNPACKED_ARRAY_END);
-    }
-
-    public void writeUnpackedArray(Collection<?> value) throws IOException {
-        if (value == null) {
-            writeNull();
-            return;
-        }
-        buffer.put(MotanType.UNPACKED_ARRAY);
+        buffer.put(MotanType.ARRAY);
         for (Object v : value) {
             writeObject(v);
         }
-        buffer.put(MotanType.UNPACKED_ARRAY_END);
+        buffer.put(MotanType.ARRAY_END);
     }
 
-    public void writeUnpackedMap(Map<?, ?> value) throws IOException {
+    public void writeCollection(Collection<?> value) throws IOException {
         if (value == null) {
             writeNull();
             return;
         }
-        buffer.put(MotanType.UNPACKED_MAP);
+        buffer.put(MotanType.ARRAY);
+        for (Object v : value) {
+            writeObject(v);
+        }
+        buffer.put(MotanType.ARRAY_END);
+    }
+
+    public void writeMap(Map<?, ?> value) throws IOException {
+        if (value == null) {
+            writeNull();
+            return;
+        }
+        buffer.put(MotanType.MAP);
         for (Map.Entry<?, ?> entry : value.entrySet()) {
             writeObject(entry.getKey());
             writeObject(entry.getValue());
         }
-        buffer.put(MotanType.UNPACKED_MAP_END);
+        buffer.put(MotanType.MAP_END);
     }
 
     public void writeObject(Object value) throws IOException {
@@ -130,7 +130,7 @@ public class MotanObjectOutput {
             writeBytes((byte[]) value);
             return;
         } else if (clz.isArray()) {
-            writeUnpackedArray((Object[]) value);
+            writeArray((Object[]) value);
             return;
         }
         Serializer serializer = SerializerFactory.getSerializer(clz);

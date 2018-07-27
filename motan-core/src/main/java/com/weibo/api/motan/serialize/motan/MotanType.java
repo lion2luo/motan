@@ -18,10 +18,10 @@ public final class MotanType {
     public static final byte INT64 = 8;
     public static final byte FLOAT32 = 9;
     public static final byte FLOAT64 = 10;
-    public static final byte UNPACKED_ARRAY = 20;
-    public static final byte UNPACKED_ARRAY_END = 21;
-    public static final byte UNPACKED_MAP = 22;
-    public static final byte UNPACKED_MAP_END = 23;
+    public static final byte ARRAY = 20;
+    public static final byte ARRAY_END = 21;
+    public static final byte MAP = 22;
+    public static final byte MAP_END = 23;
     public static final byte PACKED_ARRAY = 24;
     public static final byte PACKED_MAP = 25;
     public static final byte MESSAGE = 26;

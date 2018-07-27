@@ -64,7 +64,7 @@ public class MotanSerializationTest {
         b = serialization.serialize(bytes);
         assertNotNull(b);
         assertTrue(b.length > 0);
-        assertTrue(b[0] == MotanSerialization.BYTE_ARRAY);
+        assertTrue(b[0] == MotanType.BYTE_ARRAY);
         byte[] nbytes = serialization.deserialize(b, byte[].class);
         assertEquals(bytes.length, nbytes.length);
 

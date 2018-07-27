@@ -18,40 +18,23 @@
 
 package com.weibo.api.motan.serialize.motan;
 
-import com.weibo.api.motan.codec.Serialization;
-import com.weibo.api.motan.codec.TypeDeserializer;
+import com.weibo.api.motan.codec.TypeSerialization;
 import com.weibo.api.motan.core.extension.SpiMeta;
 import com.weibo.api.motan.exception.MotanServiceException;
 import com.weibo.api.motan.protocol.v2motan.GrowableByteBuffer;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import static com.weibo.api.motan.serialize.motan.MotanType.*;
 
 @SpiMeta(name = "motan")
-public class MotanSerialization implements Serialization, TypeDeserializer {
+public class MotanSerialization implements TypeSerialization {
 
-    public static final byte FALSE = 0;
-    public static final byte TRUE = 1;
-    public static final byte NULL = 2;
-    public static final byte BYTE = 3;
-    public static final byte STRING = 4;
-    public static final byte BYTE_ARRAY = 5;
-    public static final byte INT16 = 6;
-    public static final byte INT32 = 7;
-    public static final byte INT64 = 8;
-    public static final byte FLOAT32 = 9;
-    public static final byte FLOAT64 = 10;
-    public static final byte UNPACKED_ARRAY = 20;
-    public static final byte UNPACKED_ARRAY_END = 21;
-    public static final byte UNPACKED_MAP = 22;
-    public static final byte UNPACKED_MAP_END = 23;
-    public static final byte PACKED_ARRAY = 24;
-    public static final byte PACKED_MAP = 25;
-    public static final byte MESSAGE = 26;
     private static final Map<Class<?>, MessageTemplate<?>> MESSAGE_TEMPLATES = new ConcurrentHashMap<>();
     private static final int DEFAULT_MAP_SIZE = 16;
     private static final int DEFAULT_ARRAY_SIZE = 16;
@@ -150,7 +133,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
         if (clz.isArray() && obj instanceof List) {
             List<?> result = new ArrayList<>(((List) obj).size());
             toJavaPojoCollection((List) obj, clz.getComponentType(), result);
-            Object[] arrayObj = new Object[result.size()];
+            Object[] arrayObj = (Object[]) Array.newInstance(clz.getComponentType(), result.size());
             return (T) result.toArray(arrayObj);
         }
 
@@ -433,9 +416,9 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
                 return readFloat32(buffer);
             case FLOAT64:
                 return readFloat64(buffer);
-            case UNPACKED_MAP:
+            case MAP:
                 return readUnpackedMap(buffer);
-            case UNPACKED_ARRAY:
+            case ARRAY:
                 return readUnpackedArray(buffer);
             case MESSAGE:
                 return readMessage(buffer);
@@ -504,28 +487,28 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
     }
 
     private void writeUnpackedArray(GrowableByteBuffer buffer, Object[] value) throws IOException {
-        buffer.put(UNPACKED_ARRAY);
+        buffer.put(ARRAY);
         for (int i = 0; i < value.length; i++) {
             serialize(value[i], buffer);
         }
-        buffer.put(UNPACKED_ARRAY_END);
+        buffer.put(ARRAY_END);
     }
 
     private void writeUnpackedArray(GrowableByteBuffer buffer, Collection<?> value) throws IOException {
-        buffer.put(UNPACKED_ARRAY);
+        buffer.put(ARRAY);
         for (Object v : value) {
             serialize(v, buffer);
         }
-        buffer.put(UNPACKED_ARRAY_END);
+        buffer.put(ARRAY_END);
     }
 
     private void writeUnpackedMap(GrowableByteBuffer buffer, Map<?, ?> value) throws IOException {
-        buffer.put(UNPACKED_MAP);
+        buffer.put(MAP);
         for (Map.Entry<?, ?> entry : value.entrySet()) {
             serialize(entry.getKey(), buffer);
             serialize(entry.getValue(), buffer);
         }
-        buffer.put(UNPACKED_MAP_END);
+        buffer.put(MAP_END);
     }
 
     private void writeMessage(GrowableByteBuffer buffer, GenericMessage message) throws IOException {
@@ -599,7 +582,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
     }
 
     private <T extends Collection> T readUnpackedCollection(GrowableByteBuffer buffer, T collection) throws IOException {
-        while (buffer.get() != UNPACKED_ARRAY_END) {
+        while (buffer.get() != ARRAY_END) {
             buffer.position(buffer.position() - 1);
             collection.add(deserialize(buffer));
         }
@@ -608,7 +591,7 @@ public class MotanSerialization implements Serialization, TypeDeserializer {
 
     private Map readUnpackedMap(GrowableByteBuffer buffer) throws IOException {
         Map<Object, Object> map = new HashMap<>(DEFAULT_MAP_SIZE);
-        while (buffer.get() != UNPACKED_MAP_END) {
+        while (buffer.get() != MAP_END) {
             buffer.position(buffer.position() - 1);
             map.put(deserialize(buffer), deserialize(buffer));
         }

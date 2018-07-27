@@ -46,7 +46,9 @@ public class BasicSerializer implements Serializer {
 
     @Override
     public Object deserialize(MotanObjectInput in, Type type) throws IOException {
-        if (this.type == String.class) {
+        if (this.type == void.class) {
+            return null;
+        } else if (this.type == String.class) {
             return in.readString();
         } else if (this.type == byte[].class) {
             return in.readBytes();

@@ -17,6 +17,7 @@ import com.weibo.api.motan.util.MotanFrameworkUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,10 @@ public class AbstractRefererHandler<T> {
     }
 
     Object invokeRequest(Request request, Class returnType, boolean async) throws Throwable {
+        return invokeRequest(request, returnType, returnType, async);
+    }
+
+    Object invokeRequest(Request request, Class returnClass, Type returnType, boolean async) throws Throwable {
         RpcContext curContext = RpcContext.getContext();
         curContext.putAttribute(MotanConstants.ASYNC_SUFFIX, async);
 
@@ -92,11 +97,7 @@ public class AbstractRefererHandler<T> {
                     Object value = response.getValue();
                     if (value != null && value instanceof DeserializableObject) {
                         try {
-                            if (request instanceof DefaultRequest && ((DefaultRequest) request).getMethod() != null) {
-                                value = ((DeserializableObject) value).deserializeByType(((DefaultRequest) request).getMethod().getGenericReturnType());
-                            } else {
-                                value = ((DeserializableObject) value).deserialize(returnType);
-                            }
+                            value = ((DeserializableObject) value).deserialize(returnType);
                         } catch (IOException e) {
                             LoggerUtil.error("deserialize response value fail! deserialize type:" + returnType, e);
                             throw new MotanFrameworkException("deserialize return value fail! deserialize type:" + returnType, e);
@@ -116,7 +117,7 @@ public class AbstractRefererHandler<T> {
                     }
                 } else if (!throwException) {
                     LoggerUtil.warn("RefererInvocationHandler invoke false, so return default value: uri=" + cluster.getUrl().getUri() + " " + MotanFrameworkUtil.toString(request), e);
-                    return getDefaultReturnValue(returnType);
+                    return getDefaultReturnValue(returnClass);
                 } else {
                     LoggerUtil.error("RefererInvocationHandler invoke Error: uri=" + cluster.getUrl().getUri() + " " + MotanFrameworkUtil.toString(request), e);
                     throw e;

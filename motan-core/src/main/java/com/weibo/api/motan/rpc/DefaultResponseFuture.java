@@ -28,6 +28,7 @@ import com.weibo.api.motan.util.LoggerUtil;
 import com.weibo.api.motan.util.MotanFrameworkUtil;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,7 +53,7 @@ public class DefaultResponseFuture implements ResponseFuture {
     protected Request request;
     protected List<FutureListener> listeners;
     protected URL serverUrl;
-    protected Class returnType;
+    protected Type returnType;
 
     public DefaultResponseFuture(Request requestObj, int timeout, URL serverUrl) {
         this.request = requestObj;
@@ -191,8 +192,8 @@ public class DefaultResponseFuture implements ResponseFuture {
     }
 
     @Override
-    public void setReturnType(Class<?> clazz) {
-        this.returnType = clazz;
+    public void setReturnType(Type type) {
+        this.returnType = type;
     }
 
     public Object getRequestObj() {
@@ -268,11 +269,7 @@ public class DefaultResponseFuture implements ResponseFuture {
         }
         if (result != null && returnType != null && result instanceof DeserializableObject) {
             try {
-                if (request instanceof DefaultRequest && ((DefaultRequest) request).getMethod() != null) {
-                    result = ((DeserializableObject) result).deserializeByType(((DefaultRequest) request).getMethod().getGenericReturnType());
-                } else {
-                    result = ((DeserializableObject) result).deserialize(returnType);
-                }
+                result = ((DeserializableObject) result).deserialize(returnType);
             } catch (IOException e) {
                 LoggerUtil.error("deserialize response value fail! return type:" + returnType, e);
                 throw new MotanFrameworkException("deserialize return value fail! deserialize type:" + returnType, e);

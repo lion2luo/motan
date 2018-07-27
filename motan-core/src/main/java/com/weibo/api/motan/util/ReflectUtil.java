@@ -16,10 +16,9 @@
 
 package com.weibo.api.motan.util;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import com.weibo.api.motan.exception.MotanServiceException;
+
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -299,6 +298,44 @@ public class ReflectUtil {
             }
         } else {
             return null;
+        }
+    }
+
+    public interface ClassOfTypeResolver {
+        /**
+         * resolve class of a type
+         * @param type type need to be resolved
+         * @return the class of input type, if it's unknown, return null
+         */
+        Class<?> resolve(Type type);
+    }
+
+    private static ClassOfTypeResolver classOfTypeResolver = null;
+
+    public static void setClassOfTypeResolver(ClassOfTypeResolver resolver) {
+        ReflectUtil.classOfTypeResolver = resolver;
+    }
+
+    /**
+     * resolve class of a type
+     * @param type type need to be resolved
+     * @return the class of input type
+     * @throws MotanServiceException if the type can not be resolved
+     */
+    public static Class getClassOfType(Type type) {
+        if (type instanceof Class) {
+            return (Class<?>) type;
+        } else if (type instanceof ParameterizedType) {
+            return getClassOfType(((ParameterizedType) type).getRawType());
+        } else {
+            Class clz = null;
+            if (classOfTypeResolver != null) {
+                clz = classOfTypeResolver.resolve(type);
+            }
+            if (clz != null) {
+                return clz;
+            }
+            throw new MotanServiceException("Motan unsupported type " + type);
         }
     }
 

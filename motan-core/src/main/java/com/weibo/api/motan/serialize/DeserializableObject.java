@@ -19,11 +19,10 @@
 package com.weibo.api.motan.serialize;
 
 import com.weibo.api.motan.codec.Serialization;
-import com.weibo.api.motan.codec.TypeDeserializer;
-import com.weibo.api.motan.exception.MotanServiceException;
+import com.weibo.api.motan.codec.TypeSerialization;
+import com.weibo.api.motan.util.ReflectUtil;
 
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
@@ -38,47 +37,25 @@ public class DeserializableObject {
         this.objBytes = objBytes;
     }
 
-    public <T> T deserialize(Class<T> clz) throws IOException {
-        return serialization.deserialize(objBytes, clz);
-    }
-
-    public Object[] deserializeMulti(Class<?>[] paramTypes) throws IOException {
-        Object[] ret = null;
-        if (paramTypes != null && paramTypes.length > 0) {
-            ret = serialization.deserializeMulti(objBytes, paramTypes);
+    public <T> T deserialize(Type type) throws IOException {
+        if (serialization instanceof TypeSerialization) {
+            return ((TypeSerialization) serialization).deserializeByType(objBytes, type);
         }
-        return ret;
+        return (T) serialization.deserialize(objBytes, ReflectUtil.getClassOfType(type));
     }
 
-    public <T> T deserializeByType(Type type) throws IOException {
-        if (serialization instanceof TypeDeserializer) {
-            return ((TypeDeserializer) serialization).deserializeByType(objBytes, type);
-        }
-        return (T) serialization.deserialize(objBytes, getClassOfType(type));
-    }
-
-    public Object[] deserializeMultiByType(Type[] paramTypes) throws IOException {
-        if (paramTypes != null && paramTypes.length > 0) {
-            if (serialization instanceof TypeDeserializer) {
-                return ((TypeDeserializer) serialization).deserializeMultiByType(objBytes, paramTypes);
+    public Object[] deserializeMulti(Type[] types) throws IOException {
+        if (types != null && types.length > 0) {
+            if (serialization instanceof TypeSerialization) {
+                return ((TypeSerialization) serialization).deserializeMultiByType(objBytes, types);
             } else {
-                Class<?>[] classes = new Class[paramTypes.length];
-                for (int i = 0; i < paramTypes.length; i++) {
-                    classes[i] = getClassOfType(paramTypes[i]);
+                Class<?>[] classes = new Class[types.length];
+                for (int i = 0; i < types.length; i++) {
+                    classes[i] = ReflectUtil.getClassOfType(types[i]);
                 }
                 return serialization.deserializeMulti(objBytes, classes);
             }
         }
         return null;
-    }
-
-    public static Class getClassOfType(Type type) {
-        if (type instanceof Class) {
-            return (Class<?>) type;
-        } else if (type instanceof ParameterizedType) {
-            return (Class<?>) ((ParameterizedType) type).getRawType();
-        } else {
-            throw new MotanServiceException("Motan unsupported type " + type);
-        }
     }
 }

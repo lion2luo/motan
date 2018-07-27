@@ -34,6 +34,56 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
 
     public abstract Map<Integer, Object> getFields(T value);
 
+    /** Another way to serialize, the instance can be like follow
+     *  Model class
+     *  User {
+     *      private String name;
+     *      private int age;
+     *  }
+     *
+     *  Serializer class
+     *  UserSerializer extends AbstractMessageSerializer<User> {
+     *     public static int[] FIELD_NUMBERS = {1, 2};
+     *
+     *     public int[] getFieldNumbers() {
+     *        return  FIELD_NUMBERS;
+     *     }
+     *
+     *     public Object getField(int fieldNumber) {
+     *          switch (fieldNumber) {
+     *              case 1: return name;
+     *              case 2: return age;
+     *              default: return null;
+     *          }
+     *     }
+     *  }
+     *
+     */
+
+    /**
+    public void serialize(MotanObjectOutput out, Object value) throws IOException {
+        GrowableByteBuffer buffer = out.getBuffer();
+        buffer.put(MotanType.MESSAGE);
+        int pos = buffer.position();
+        buffer.position(pos + 4);
+        for (int fieldNumber : getFieldNumbers()) {
+            Object fieldValue = getField(fieldNumber);
+            if (fieldValue != null) {
+                buffer.putZigzag32(fieldNumber);
+                out.writeObject(fieldValue);
+            }
+        }
+        int nPos = buffer.position();
+        buffer.position(pos);
+        buffer.putInt(nPos - pos - 4);
+        buffer.position(nPos);
+    }
+
+    public abstract int[] getFieldNumbers();
+
+    public abstract Object getField(int fieldNumber);
+
+     **/
 
     @Override
     public T deserialize(MotanObjectInput in, Type type) throws IOException {

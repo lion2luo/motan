@@ -25,7 +25,7 @@ import java.lang.reflect.Type;
  * @author: luominggang
  * Description:
  */
-public interface TypeDeserializer {
+public interface TypeSerialization extends Serialization {
 
     <T> T deserializeByType(byte[] bytes, Type type) throws IOException;
 

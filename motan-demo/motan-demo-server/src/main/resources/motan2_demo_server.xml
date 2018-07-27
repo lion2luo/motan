@@ -36,7 +36,7 @@
 
     <!-- 协议配置。为防止多个业务配置冲突，推荐使用id表示具体协议。-->
     <!-- motan2 with hessian2 serialization -->
-    <motan:protocol id="motan2" default="true" name="motan2" serialization="motan"
+    <motan:protocol id="motan2" default="true" name="motan2"
                     maxServerConnection="80000" maxContentLength="1048576"
                     maxWorkerThread="800" minWorkerThread="20"/>
 

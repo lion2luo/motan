@@ -21,7 +21,7 @@ public class CollectionSerializer implements Serializer {
 
     @Override
     public void serialize(MotanObjectOutput out, Object value) throws IOException {
-        out.writeUnpackedArray((Collection<?>) value);
+        out.writeCollection((Collection<?>) value);
     }
 
     @Override
@@ -46,6 +46,6 @@ public class CollectionSerializer implements Serializer {
                 throw new MotanServiceException("MotanSerialization unsupported type " + type);
             }
         }
-        return in.readUnpackedCollection(genericType, result);
+        return in.readCollection(genericType, result);
     }
 }

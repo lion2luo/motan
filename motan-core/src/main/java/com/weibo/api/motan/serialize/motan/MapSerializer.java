@@ -23,7 +23,7 @@ public class MapSerializer implements Serializer {
 
     @Override
     public void serialize(MotanObjectOutput out, Object value) throws IOException {
-        out.writeUnpackedMap((Map<?, ?>) value);
+        out.writeMap((Map<?, ?>) value);
     }
 
     @Override
@@ -41,6 +41,6 @@ public class MapSerializer implements Serializer {
                 throw new MotanServiceException("MotanSerialization unsupported type " + type);
             }
         }
-        return in.readUnpackedMap(genericType, result);
+        return in.readMap(genericType, result);
     }
 }

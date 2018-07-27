@@ -1,5 +1,7 @@
 package com.weibo.api.motan.serialize.motan;
 
+import com.weibo.api.motan.util.LoggerUtil;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,7 +57,10 @@ public final class SerializerFactory {
     }
 
     public static void registerSerializer(Class<?> clz, Serializer serializer) {
-        serializers.putIfAbsent(clz, serializer);
+        Serializer previous = serializers.put(clz, serializer);
+        if (previous != null) {
+            LoggerUtil.warn("Serializer of " + clz + " : " + previous.getClass() + " override by : " + serializer.getClass());
+        }
     }
 
     public static Serializer getSerializer(Class<?> clz) {

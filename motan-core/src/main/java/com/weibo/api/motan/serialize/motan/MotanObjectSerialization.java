@@ -1,7 +1,8 @@
 package com.weibo.api.motan.serialize.motan;
 
 import com.weibo.api.motan.codec.Serialization;
-import com.weibo.api.motan.codec.TypeDeserializer;
+import com.weibo.api.motan.codec.TypeSerialization;
+import com.weibo.api.motan.core.extension.SpiMeta;
 import com.weibo.api.motan.protocol.v2motan.GrowableByteBuffer;
 
 import java.io.IOException;
@@ -14,7 +15,8 @@ import java.nio.ByteBuffer;
  * @author: luominggang
  * Description:
  */
-public class MotanObjectSerialization implements Serialization, TypeDeserializer {
+@SpiMeta(name = "motan")
+public class MotanObjectSerialization implements TypeSerialization {
     @Override
     public byte[] serialize(Object obj) throws IOException {
         GrowableByteBuffer buffer = new GrowableByteBuffer(4096);

@@ -69,8 +69,7 @@ public class RefererInvocationHandler<T> extends AbstractRefererHandler<T> imple
         request.setParamtersDesc(ReflectUtil.getMethodParamDesc(method));
         request.setInterfaceName(interfaceName);
         Method realMethod = getRealMethod(async, clz, method, methodName);
-        request.setMethod(realMethod);
-        return invokeRequest(request, realMethod.getReturnType(), async);
+        return invokeRequest(request, realMethod.getReturnType(), realMethod.getGenericReturnType(), async);
     }
 
     /**

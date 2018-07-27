@@ -116,7 +116,12 @@ public class Motan2RpcClient {
         user = (User) client.call(request, User.class);
         System.out.println(user);
 
-        client.call("rename", new Object[]{null, "FFF"}, void.class);
+        try {
+
+            client.call("rename", new Object[]{null /* this will cause NPE */, "FFF"}, void.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void motan2ApiCommonClientDemo() throws Throwable {

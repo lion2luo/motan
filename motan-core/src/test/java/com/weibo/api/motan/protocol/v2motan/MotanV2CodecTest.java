@@ -23,9 +23,11 @@ import com.weibo.api.motan.mock.MockChannel;
 import com.weibo.api.motan.rpc.*;
 import com.weibo.api.motan.serialize.DeserializableObject;
 import com.weibo.api.motan.transport.Channel;
+import com.weibo.api.motan.util.ReflectUtil;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -90,11 +92,11 @@ public class MotanV2CodecTest {
         assertEquals(expect.toString(), real.toString());
         assertTrue(real.getArguments()[0] instanceof DeserializableObject);
 
-        Class[] classes = new Class[expect.getArguments().length];
+        Type[] types = new Type[expect.getArguments().length];
         for (int i = 0; i < expect.getArguments().length; i++) {
-            classes[i] = expect.getArguments()[i].getClass();
+            types[i] = expect.getArguments()[i].getClass();
         }
-        Object[] result = ((DeserializableObject) real.getArguments()[0]).deserializeMulti(classes);
+        Object[] result = ((DeserializableObject) real.getArguments()[0]).deserializeMulti(types);
         for(int i = 0; i < expect.getArguments().length; i++){
             assertEquals(expect.getArguments()[i], result[i]);
         }
