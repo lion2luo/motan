@@ -29,23 +29,14 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+
 import static com.weibo.api.motan.serialize.motan.MotanType.*;
 
 @SpiMeta(name = "motan")
 public class MotanSerialization implements TypeSerialization {
 
-    private static final Map<Class<?>, MessageTemplate<?>> MESSAGE_TEMPLATES = new ConcurrentHashMap<>();
     private static final int DEFAULT_MAP_SIZE = 16;
     private static final int DEFAULT_ARRAY_SIZE = 16;
-
-    public static void registerMessageTemplate(Class clz, MessageTemplate template) {
-        MESSAGE_TEMPLATES.put(clz, template);
-    }
-
-    public static MessageTemplate getMessageTemplate(Class clz) {
-        return MESSAGE_TEMPLATES.get(clz);
-    }
 
     public static <T> T toJavaPojo(Object obj, Type type) {
         Class<?> clz;
@@ -204,11 +195,11 @@ public class MotanSerialization implements TypeSerialization {
             if (clz == GenericMessage.class) {
                 return (T) obj;
             }
-            MessageTemplate messageTemplate = getMessageTemplate(clz);
-            if (messageTemplate == null) {
+//            MessageTemplate messageTemplate = getMessageTemplate(clz);
+//            if (messageTemplate == null) {
                 throw new MotanServiceException("MotanSerialization unsupported type " + clz);
-            }
-            return (T) messageTemplate.fromMessage((GenericMessage) obj);
+//            }
+//            return (T) messageTemplate.fromMessage((GenericMessage) obj);
         }
 
         throw new MotanServiceException("MotanSerialization not support receiver type " + type + " with value type " + obj.getClass());
@@ -355,11 +346,11 @@ public class MotanSerialization implements TypeSerialization {
         }
 
         // ok, if it is not a basic type, use message template converter
-        MessageTemplate messageTemplate = getMessageTemplate(clz);
-        if (messageTemplate != null) {
-            writeMessage(buffer, messageTemplate.toMessage(obj));
-            return;
-        }
+//        MessageTemplate messageTemplate = getMessageTemplate(clz);
+//        if (messageTemplate != null) {
+//            writeMessage(buffer, messageTemplate.toMessage(obj));
+//            return;
+//        }
         throw new MotanServiceException("MotanSerialization unsupported type: " + clz);
     }
 

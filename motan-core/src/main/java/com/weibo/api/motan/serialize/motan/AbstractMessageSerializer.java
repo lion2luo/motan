@@ -2,9 +2,14 @@ package com.weibo.api.motan.serialize.motan;
 
 import com.weibo.api.motan.exception.MotanServiceException;
 import com.weibo.api.motan.protocol.v2motan.GrowableByteBuffer;
+import com.weibo.api.motan.util.LoggerUtil;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -14,6 +19,23 @@ import java.util.Map;
  * Description:
  */
 public abstract class AbstractMessageSerializer<T> implements Serializer {
+    public Map<Integer, Field> getIdTypeMap() {
+        return Collections.emptyMap();
+    }
+
+    protected void setIdTypeMap(Class clazz) {
+        int i = 0;
+        for (Field field : clazz.getDeclaredFields()) {
+            if (Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            if (!field.isAccessible()) {
+                field.setAccessible(true);
+            }
+            getIdTypeMap().put(++i, field);
+        }
+    }
+
     @Override
     public void serialize(MotanObjectOutput out, Object value) throws IOException {
         GrowableByteBuffer buffer = out.getBuffer();
@@ -32,7 +54,17 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
         buffer.position(nPos);
     }
 
-    public abstract Map<Integer, Object> getFields(T value);
+    public Map<Integer, Object> getFields(T obj) {
+        Map<Integer, Object> fields = new HashMap<>();
+        for (Map.Entry<Integer, Field> entry : getIdTypeMap().entrySet()) {
+            try {
+                fields.put(entry.getKey(), entry.getValue().get(obj));
+            } catch (IllegalAccessException e) {
+                LoggerUtil.warn("fail to serialize field, e=" + e.getMessage());
+            }
+        }
+        return fields;
+    }
 
     /** Another way to serialize, the instance can be like follow
      *  Model class
@@ -110,6 +142,19 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
 
     public abstract T newInstance();
 
-    public abstract void readField(MotanObjectInput in, int fieldNumber, T result) throws IOException;
+    public void readField(MotanObjectInput in, int fieldNumber, T result) throws IOException {
+        try {
+            Field field = getIdTypeMap().get(fieldNumber);
+            Class type = field.getType();
+            Serializer serializer = SerializerFactory.getSerializer(type);
+            if (serializer != null) {
+                field.set(result, serializer.deserialize(in, type));
+            } else {
+                System.out.println("xxx");
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

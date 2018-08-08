@@ -1,10 +1,11 @@
 package com.weibo.api.motan.serialize.motan;
 
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.weibo.api.motan.codec.Serialization;
 import org.junit.Test;
 
-import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -20,6 +21,7 @@ public class MotanSerializationTest {
 
     public static TestObject createDefaultTestObject() {
         TestObject testObject = new TestObject();
+//        testObject.f0 = 'a';
         testObject.f1 = true;
         testObject.f2 = (byte) 2;
         testObject.f3 = new byte[]{1, 2, 3};
@@ -75,7 +77,9 @@ public class MotanSerializationTest {
         TestObject testObject = createDefaultTestObject();
         testObject.f12 = createDefaultTestObject();
         TestObject dv = serialization.deserialize(serialization.serialize(testObject), TestObject.class);
-        System.out.println(dv);
+        String expect = JSON.toJSONString(testObject);
+        String actual = JSON.toJSONString(dv);
+        assertEquals(expect, actual);
     }
 
     @Test
@@ -278,76 +282,27 @@ public class MotanSerializationTest {
 
     public static class TestObject {
         static {
-            MotanSerialization.registerMessageTemplate(TestObject.class, new TestObjectMessageTemplate());
-            SerializerFactory.registerSerializer(TestObject.class, new AbstractMessageSerializer<TestObject>() {
-                @Override
-                public Map<Integer, Object> getFields(TestObject value) {
-                    Map<Integer, Object> fields = new HashMap<>();
-                    fields.put(1, value.f1);
-                    fields.put(2, value.f2);
-                    fields.put(3, value.f3);
-                    fields.put(4, value.f4);
-                    fields.put(5, value.f5);
-                    fields.put(6, value.f6);
-                    fields.put(7, value.f7);
-                    fields.put(8, value.f8);
-                    fields.put(9, value.f9);
-                    fields.put(10, value.f10);
-                    fields.put(11, value.f11);
-                    fields.put(12, value.f12);
-                    return fields;
-                }
+            SerializerFactory.registerSerializer(TestObject.class, new TestObjectMsgSerializer());
+        }
+        static class TestObjectMsgSerializer extends AbstractMessageSerializer<TestObject> {
+            private static Map<Integer, Field> idTypeMap = new HashMap<>();
 
-                @Override
-                public void readField(MotanObjectInput in, int fieldNumber, TestObject result) throws IOException {
-                    switch (fieldNumber) {
-                        case 1:
-                            result.f1 = in.readBool();
-                            break;
-                        case 2:
-                            result.f2 = in.readByte();
-                            break;
-                        case 3:
-                            result.f3 = in.readBytes();
-                            break;
-                        case 4:
-                            result.f4 = in.readString();
-                            break;
-                        case 5:
-                            result.f5 = in.readShort();
-                            break;
-                        case 6:
-                            result.f6 = in.readInt();
-                            break;
-                        case 7:
-                            result.f7 = in.readLong();
-                            break;
-                        case 8:
-                            result.f8 = in.readFloat();
-                            break;
-                        case 9:
-                            result.f9 = in.readDouble();
-                            break;
-                        case 10:
-                            result.f10 = (List<String>) in.readObject(new TypeReference<List<String>>() {
-                            }.getType());
-                            break;
-                        case 11:
-                            result.f11 = (Map<String, String>) in.readObject(new TypeReference<Map<String, String>>() {
-                            }.getType());
-                            break;
-                        case 12:
-                            result.f12 = (TestObject) in.readObject(TestObject.class);
-                    }
-                }
+            public TestObjectMsgSerializer() {
+                setIdTypeMap(TestObject.class);
+            }
 
-                @Override
-                public TestObject newInstance() {
-                    return new TestObject();
-                }
-            });
+            @Override
+            public Map<Integer, Field> getIdTypeMap() {
+                return idTypeMap;
+            }
+
+            @Override
+            public TestObject newInstance() {
+                return new TestObject();
+            }
         }
 
+        //        public char f0;
         public boolean f1;
         public byte f2;
         public byte[] f3;
@@ -360,9 +315,5 @@ public class MotanSerializationTest {
         public List<String> f10;
         public Map<String, String> f11;
         public TestObject f12;
-
-        public static void main(String[] args) {
-            MessageTemplateUtils.generate(TestObject.class, System.getProperty("user.dir") + "/motan-core/src/test/java");
-        }
     }
 }

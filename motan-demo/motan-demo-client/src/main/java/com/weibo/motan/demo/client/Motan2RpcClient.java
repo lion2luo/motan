@@ -26,9 +26,11 @@ import com.weibo.api.motan.rpc.Future;
 import com.weibo.api.motan.rpc.FutureListener;
 import com.weibo.api.motan.rpc.Request;
 import com.weibo.api.motan.rpc.ResponseFuture;
+import com.weibo.api.motan.serialize.motan.SerializerFactory;
 import com.weibo.motan.demo.service.MotanDemoService;
 import com.weibo.motan.demo.service.PbParamService;
 import com.weibo.motan.demo.service.model.User;
+import com.weibo.motan.demo.service.model.UserMsgSerializer;
 import io.grpc.examples.routeguide.Point;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -74,6 +76,8 @@ public class Motan2RpcClient {
         userMap.put(u1.getId(), u1);
         userMap.put(u2.getId(), u2);
 
+        SerializerFactory.registerSerializer(User.class, new UserMsgSerializer());
+
         System.out.println(service.listUser(userList));
         System.out.println(service.mapUser(userMap));
 
@@ -117,7 +121,6 @@ public class Motan2RpcClient {
         System.out.println(user);
 
         try {
-
             client.call("rename", new Object[]{null /* this will cause NPE */, "FFF"}, void.class);
         } catch (Exception e) {
             e.printStackTrace();
