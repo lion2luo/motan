@@ -49,10 +49,10 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
      *        return  FIELD_NUMBERS;
      *     }
      *
-     *     public Object getField(int fieldNumber) {
+     *     public Object getField(int fieldNumber, User value) {
      *          switch (fieldNumber) {
-     *              case 1: return name;
-     *              case 2: return age;
+     *              case 1: return value.name;
+     *              case 2: return value.age;
      *              default: return null;
      *          }
      *     }
@@ -67,7 +67,7 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
         int pos = buffer.position();
         buffer.position(pos + 4);
         for (int fieldNumber : getFieldNumbers()) {
-            Object fieldValue = getField(fieldNumber);
+            Object fieldValue = getField(fieldNumber, (T)value);
             if (fieldValue != null) {
                 buffer.putZigzag32(fieldNumber);
                 out.writeObject(fieldValue);
@@ -81,7 +81,7 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
 
     public abstract int[] getFieldNumbers();
 
-    public abstract Object getField(int fieldNumber);
+    public abstract Object getField(int fieldNumber, T value);
 
      **/
 
