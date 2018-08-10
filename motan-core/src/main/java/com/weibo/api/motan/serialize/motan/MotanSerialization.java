@@ -195,11 +195,7 @@ public class MotanSerialization implements TypeSerialization {
             if (clz == GenericMessage.class) {
                 return (T) obj;
             }
-//            MessageTemplate messageTemplate = getMessageTemplate(clz);
-//            if (messageTemplate == null) {
-                throw new MotanServiceException("MotanSerialization unsupported type " + clz);
-//            }
-//            return (T) messageTemplate.fromMessage((GenericMessage) obj);
+            throw new MotanServiceException("MotanSerialization unsupported type " + clz);
         }
 
         throw new MotanServiceException("MotanSerialization not support receiver type " + type + " with value type " + obj.getClass());
@@ -345,12 +341,6 @@ public class MotanSerialization implements TypeSerialization {
             return;
         }
 
-        // ok, if it is not a basic type, use message template converter
-//        MessageTemplate messageTemplate = getMessageTemplate(clz);
-//        if (messageTemplate != null) {
-//            writeMessage(buffer, messageTemplate.toMessage(obj));
-//            return;
-//        }
         throw new MotanServiceException("MotanSerialization unsupported type: " + clz);
     }
 

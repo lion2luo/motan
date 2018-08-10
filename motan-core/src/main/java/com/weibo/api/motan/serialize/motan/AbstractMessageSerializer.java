@@ -150,10 +150,10 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
             if (serializer != null) {
                 field.set(result, serializer.deserialize(in, type));
             } else {
-                System.out.println("xxx");
+                LoggerUtil.warn("no serializer found, type:" + type.getSimpleName() + ", class:" + result.getClass().getSimpleName());
             }
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            LoggerUtil.error("fail to read field, class:" + result.getClass().getSimpleName() + ", e=" + e.getMessage());
         }
     }
 
