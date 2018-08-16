@@ -145,13 +145,17 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
     public void readField(MotanObjectInput in, int fieldNumber, T result) throws IOException {
         try {
             Field field = getIdTypeMap().get(fieldNumber);
+            if (field == null) {
+                // for unknown field we need read the value for compatible, such as Class add a new field
+                in.readObject();
+                return;
+            }
             Class type = field.getType();
             Serializer serializer = SerializerFactory.getSerializer(type);
-            if (serializer != null) {
-                field.set(result, serializer.deserialize(in, type));
-            } else {
-                LoggerUtil.warn("no serializer found, type:" + type.getSimpleName() + ", class:" + result.getClass().getSimpleName());
+            if (serializer == null) {
+                throw new MotanServiceException("MotanSerialization serializer not found, type:" + type.getSimpleName() + ", class:" + result.getClass().getSimpleName());
             }
+            field.set(result, serializer.deserialize(in, field.getGenericType()));
         } catch (IllegalAccessException e) {
             LoggerUtil.error("fail to read field, class:" + result.getClass().getSimpleName() + ", e=" + e.getMessage());
         }
