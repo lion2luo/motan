@@ -21,6 +21,8 @@ import com.weibo.motan.demo.service.MotanDemoService;
 import com.weibo.motan.demo.service.model.User;
 
 import java.util.Objects;
+import java.util.List;
+import java.util.Map;
 
 @MotanService(export = "demoMotan:8002")
 public class MotanDemoServiceImpl implements MotanDemoService {
@@ -37,6 +39,16 @@ public class MotanDemoServiceImpl implements MotanDemoService {
         System.out.println(user.getId() + " rename " + user.getName() + " to " + name);
         user.setName(name);
         return user;
+    }
+
+    @Override
+    public List<User> listUser(List<User> userList) {
+        return userList;
+    }
+
+    @Override
+    public Map<Integer, User> mapUser(Map<Integer, User> userMap) {
+        return userMap;
     }
 
 }

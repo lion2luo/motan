@@ -19,8 +19,11 @@
 package com.weibo.api.motan.serialize;
 
 import com.weibo.api.motan.codec.Serialization;
+import com.weibo.api.motan.codec.TypeSerialization;
+import com.weibo.api.motan.util.ReflectUtil;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 
 /**
  * Created by zhanglei28 on 2017/5/9.
@@ -34,15 +37,25 @@ public class DeserializableObject {
         this.objBytes = objBytes;
     }
 
-    public <T> T deserialize(Class<T> clz) throws IOException {
-        return serialization.deserialize(objBytes, clz);
+    public <T> T deserialize(Type type) throws IOException {
+        if (serialization instanceof TypeSerialization) {
+            return ((TypeSerialization) serialization).deserializeByType(objBytes, type);
+        }
+        return (T) serialization.deserialize(objBytes, ReflectUtil.getClassOfType(type));
     }
 
-    public Object[] deserializeMulti(Class<?>[] paramTypes) throws IOException {
-        Object[] ret = null;
-        if (paramTypes != null && paramTypes.length > 0) {
-            ret = serialization.deserializeMulti(objBytes, paramTypes);
+    public Object[] deserializeMulti(Type[] types) throws IOException {
+        if (types != null && types.length > 0) {
+            if (serialization instanceof TypeSerialization) {
+                return ((TypeSerialization) serialization).deserializeMultiByType(objBytes, types);
+            } else {
+                Class<?>[] classes = new Class[types.length];
+                for (int i = 0; i < types.length; i++) {
+                    classes[i] = ReflectUtil.getClassOfType(types[i]);
+                }
+                return serialization.deserializeMulti(objBytes, classes);
+            }
         }
-        return ret;
+        return null;
     }
 }

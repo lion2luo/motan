@@ -73,7 +73,7 @@ public class SimpleSerializationTest {
         SimpleSerialization serialization = new SimpleSerialization();
         Object[] objects = new Object[3];
         objects[0] = "teststring";
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
         map.put("name", "ray");
         map.put("code", "xxx");
         objects[1] = map;
@@ -199,7 +199,7 @@ public class SimpleSerializationTest {
                 assertEquals(values, dv.get(entry.getKey()));
             } else if (entry.getValue() instanceof Collection) {
                 ArrayList excepted = new ArrayList((Collection) entry.getValue());
-                ArrayList actual = new ArrayList((Collection) entry.getValue());
+                ArrayList actual = new ArrayList((Collection) dv.get(entry.getKey()));
                 Collections.sort(excepted);
                 Collections.sort(actual);
                 assertEquals(excepted, actual);

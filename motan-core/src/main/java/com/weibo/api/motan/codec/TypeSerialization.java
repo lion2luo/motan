@@ -14,22 +14,20 @@
  *    limitations under the License.
  */
 
-package com.weibo.motan.demo.service;
+package com.weibo.api.motan.codec;
 
-import com.weibo.api.motan.transport.async.MotanAsync;
-import com.weibo.motan.demo.service.model.User;
+import java.io.IOException;
+import java.lang.reflect.Type;
 
-import java.util.List;
-import java.util.Map;
+/**
+ * Created on 2018/7/5
+ *
+ * @author: luominggang
+ * Description:
+ */
+public interface TypeSerialization extends Serialization {
 
-@MotanAsync
-public interface MotanDemoService {
-    String hello(String name);
+    <T> T deserializeByType(byte[] bytes, Type type) throws IOException;
 
-    User rename(User user, String name) throws Exception;
-
-	List<User> listUser(List<User> userList);
-
-	Map<Integer, User> mapUser(Map<Integer, User> userMap);
-
+    Object[] deserializeMultiByType(byte[] data, Type[] types) throws IOException;
 }

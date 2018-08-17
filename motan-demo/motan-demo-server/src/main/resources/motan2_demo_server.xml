@@ -50,6 +50,11 @@
                     maxServerConnection="80000" maxContentLength="1048576"
                     maxWorkerThread="800" minWorkerThread="20"/>
 
+    <!-- motan2 with motan serialization -->
+    <motan:protocol id="motan2-motan" default="true" name="motan2" serialization="motan"
+                    maxServerConnection="80000" maxContentLength="1048576"
+                    maxWorkerThread="800" minWorkerThread="20"/>
+
     <!-- 通用配置，多个rpc服务使用相同的基础配置. group和module定义具体的服务池。export格式为“protocol id:提供服务的端口”-->
     <motan:basicService export="motan2:8002"
                         group="motan-demo-rpc" accessLog="false" shareChannel="true" module="motan-demo-rpc"
@@ -59,11 +64,17 @@
     <motan:service interface="com.weibo.motan.demo.service.MotanDemoService"
                    ref="motanDemoServiceImpl" export="motan2:8001" basicService="serviceBasicConfig">
     </motan:service>
+
     <motan:service interface="com.weibo.motan.demo.service.MotanDemoService"
                    ref="motanDemoServiceImpl" export="motan2-simple:8002" basicService="serviceBasicConfig">
     </motan:service>
+
     <motan:service interface="com.weibo.motan.demo.service.PbParamService"
                    ref="pbParamServiceImpl" export="motan2-pb:8003" basicService="serviceBasicConfig">
+    </motan:service>
+
+    <motan:service interface="com.weibo.motan.demo.service.MotanDemoService"
+                   ref="motanDemoServiceImpl" export="motan2-motan:8004" basicService="serviceBasicConfig">
     </motan:service>
 
 </beans>

@@ -17,6 +17,7 @@ import com.weibo.api.motan.util.MotanFrameworkUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,10 @@ public class AbstractRefererHandler<T> {
     }
 
     Object invokeRequest(Request request, Class returnType, boolean async) throws Throwable {
+        return invokeRequest(request, returnType, returnType, async);
+    }
+
+    Object invokeRequest(Request request, Class returnClass, Type returnType, boolean async) throws Throwable {
         RpcContext curContext = RpcContext.getContext();
         curContext.putAttribute(MotanConstants.ASYNC_SUFFIX, async);
 
@@ -112,7 +117,7 @@ public class AbstractRefererHandler<T> {
                     }
                 } else if (!throwException) {
                     LoggerUtil.warn("RefererInvocationHandler invoke false, so return default value: uri=" + cluster.getUrl().getUri() + " " + MotanFrameworkUtil.toString(request), e);
-                    return getDefaultReturnValue(returnType);
+                    return getDefaultReturnValue(returnClass);
                 } else {
                     LoggerUtil.error("RefererInvocationHandler invoke Error: uri=" + cluster.getUrl().getUri() + " " + MotanFrameworkUtil.toString(request), e);
                     throw e;

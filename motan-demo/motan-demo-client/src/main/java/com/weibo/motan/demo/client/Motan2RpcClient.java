@@ -26,12 +26,19 @@ import com.weibo.api.motan.rpc.Future;
 import com.weibo.api.motan.rpc.FutureListener;
 import com.weibo.api.motan.rpc.Request;
 import com.weibo.api.motan.rpc.ResponseFuture;
+import com.weibo.api.motan.serialize.motan.SerializerFactory;
 import com.weibo.motan.demo.service.MotanDemoService;
 import com.weibo.motan.demo.service.PbParamService;
 import com.weibo.motan.demo.service.model.User;
+import com.weibo.motan.demo.service.model.UserMsgSerializer;
 import io.grpc.examples.routeguide.Point;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Motan2RpcClient {
 
@@ -54,6 +61,27 @@ public class Motan2RpcClient {
         CommonHandler xmlClient = (CommonHandler) ctx.getBean("motanDemoReferer-common-client");
         motan2XmlCommonClientDemo(xmlClient);
         motan2ApiCommonClientDemo();
+
+        // motan serialization
+        service = (MotanDemoService) ctx.getBean("motanDemoReferer-motan");
+        print(service);
+        User u1 = new User();
+        u1.setId(1);
+        u1.setName("aaa");
+        User u2 = new User();
+        u2.setId(2);
+        u2.setName("bbb");
+        List<User> userList = Arrays.asList(u1, u2);
+        Map<Integer, User> userMap = new HashMap<>();
+        userMap.put(u1.getId(), u1);
+        userMap.put(u2.getId(), u2);
+
+        SerializerFactory.registerSerializer(User.class, new UserMsgSerializer());
+
+        System.out.println(service.listUser(userList));
+        System.out.println(service.mapUser(userMap));
+
+        System.out.println(service.rename(u1, "test"));
 
         System.out.println("motan demo is finish.");
         System.exit(0);
@@ -92,7 +120,11 @@ public class Motan2RpcClient {
         user = (User) client.call(request, User.class);
         System.out.println(user);
 
-        client.call("rename", new Object[]{null, "FFF"}, void.class);
+        try {
+            client.call("rename", new Object[]{null /* this will cause NPE */, "FFF"}, void.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void motan2ApiCommonClientDemo() throws Throwable {

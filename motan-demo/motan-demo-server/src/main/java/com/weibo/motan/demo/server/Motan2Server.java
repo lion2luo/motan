@@ -19,7 +19,10 @@
 package com.weibo.motan.demo.server;
 
 import com.weibo.api.motan.common.MotanConstants;
+import com.weibo.api.motan.serialize.motan.SerializerFactory;
 import com.weibo.api.motan.util.MotanSwitcherUtil;
+import com.weibo.motan.demo.service.model.User;
+import com.weibo.motan.demo.service.model.UserMsgSerializer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -31,6 +34,9 @@ public class Motan2Server {
     public static void main(String[] args) throws InterruptedException {
         ApplicationContext applicationContext = new ClassPathXmlApplicationContext(new String[] {"classpath*:motan2_demo_server.xml"});
         MotanSwitcherUtil.setSwitcherValue(MotanConstants.REGISTRY_HEARTBEAT_SWITCHER, true);
+
+        SerializerFactory.registerSerializer(User.class, new UserMsgSerializer());
+
         System.out.println("server start...");
     }
 }

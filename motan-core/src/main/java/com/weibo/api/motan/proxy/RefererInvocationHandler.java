@@ -68,8 +68,8 @@ public class RefererInvocationHandler<T> extends AbstractRefererHandler<T> imple
         request.setMethodName(methodName);
         request.setParamtersDesc(ReflectUtil.getMethodParamDesc(method));
         request.setInterfaceName(interfaceName);
-
-        return invokeRequest(request, getRealReturnType(async, this.clz, method, methodName), async);
+        Method realMethod = getRealMethod(async, clz, method, methodName);
+        return invokeRequest(request, realMethod.getReturnType(), realMethod.getGenericReturnType(), async);
     }
 
     /**
@@ -81,7 +81,7 @@ public class RefererInvocationHandler<T> extends AbstractRefererHandler<T> imple
     public boolean isLocalMethod(Method method) {
         if (method.getDeclaringClass().equals(Object.class)) {
             try {
-                Method interfaceMethod = clz.getDeclaredMethod(method.getName(), method.getParameterTypes());
+                clz.getDeclaredMethod(method.getName(), method.getParameterTypes());
                 return false;
             } catch (Exception e) {
                 return true;
@@ -116,18 +116,15 @@ public class RefererInvocationHandler<T> extends AbstractRefererHandler<T> imple
         }
     }
 
-    private Class<?> getRealReturnType(boolean asyncCall, Class<?> clazz, Method method, String methodName) {
-        if (asyncCall) {
-            try {
-                Method m = clazz.getMethod(methodName, method.getParameterTypes());
-                return m.getReturnType();
-            } catch (Exception e) {
-                LoggerUtil.warn("RefererInvocationHandler get real return type fail. err:" + e.getMessage());
-                return method.getReturnType();
-            }
-        } else {
-            return method.getReturnType();
+    private Method getRealMethod(boolean asyncCall, Class<?> clazz, Method method, String methodName) {
+        if (!asyncCall) {
+            return method;
+        }
+        try {
+            return clazz.getMethod(methodName, method.getParameterTypes());
+        } catch (Exception e) {
+            LoggerUtil.warn("RefererInvocationHandler get real method fail. err:" + e.getMessage());
+            return method;
         }
     }
-
 }

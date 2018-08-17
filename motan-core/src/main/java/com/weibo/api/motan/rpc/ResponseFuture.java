@@ -13,6 +13,8 @@
  */
 package com.weibo.api.motan.rpc;
 
+import java.lang.reflect.Type;
+
 public interface ResponseFuture extends Future, Response{
     void onSuccess(Response response);
 
@@ -20,5 +22,5 @@ public interface ResponseFuture extends Future, Response{
     
     long getCreateTime();
 
-    void setReturnType(Class<?> clazz);
+    void setReturnType(Type type);
 }

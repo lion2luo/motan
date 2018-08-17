@@ -28,6 +28,7 @@ import com.weibo.api.motan.util.LoggerUtil;
 import com.weibo.api.motan.util.MotanFrameworkUtil;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,7 +53,7 @@ public class DefaultResponseFuture implements ResponseFuture {
     protected Request request;
     protected List<FutureListener> listeners;
     protected URL serverUrl;
-    protected Class returnType;
+    protected Type returnType;
 
     public DefaultResponseFuture(Request requestObj, int timeout, URL serverUrl) {
         this.request = requestObj;
@@ -191,8 +192,8 @@ public class DefaultResponseFuture implements ResponseFuture {
     }
 
     @Override
-    public void setReturnType(Class<?> clazz) {
-        this.returnType = clazz;
+    public void setReturnType(Type type) {
+        this.returnType = type;
     }
 
     public Object getRequestObj() {
