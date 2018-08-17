@@ -150,12 +150,7 @@ public abstract class AbstractMessageSerializer<T> implements Serializer {
                 in.readObject();
                 return;
             }
-            Class type = field.getType();
-            Serializer serializer = SerializerFactory.getSerializer(type);
-            if (serializer == null) {
-                throw new MotanServiceException("MotanSerialization serializer not found, type:" + type.getSimpleName() + ", class:" + result.getClass().getSimpleName());
-            }
-            field.set(result, serializer.deserialize(in, field.getGenericType()));
+            field.set(result, in.readObject(field.getGenericType()));
         } catch (IllegalAccessException e) {
             LoggerUtil.error("fail to read field, class:" + result.getClass().getSimpleName() + ", e=" + e.getMessage());
         }
